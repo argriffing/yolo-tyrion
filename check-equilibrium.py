@@ -37,11 +37,11 @@ def drawtri(M, T, v):
     plt.show()
 
 
-if __name__ == '__main__':
+def do_full_simplex_then_collapse(mutrate):
     #mutrate = 0.01
     #mutrate = 0.2
     #mutrate = 10
-    mutrate = 100
+    #mutrate = 100
     #mutrate = 1
     N = 20
     k = 4
@@ -75,6 +75,41 @@ if __name__ == '__main__':
     for state, value in zip(M_collapsed, v_collapsed):
         print state, value
     # draw an equilateral triangle
-    drawtri(M_collapsed, T_collapsed, v_collapsed)
+    #drawtri(M_collapsed, T_collapsed, v_collapsed)
     #test_mesh()
+    return M_collapsed, T_collapsed, v_collapsed
+
+def do_collapsed_simplex(mutrate):
+    #mutrate = 100
+    N = 20
+    k = 3
+    M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
+    T = multinomstate.get_inverse_map(M)
+    # Create the joint site pair mutation rate matrix.
+    R = mutrate * wrightcore.create_mutation_collapsed(M, T)
+    # Create the joint site pair drift transition matrix.
+    lmcs = wrightcore.get_lmcs(M)
+    lps = wrightcore.create_selection_neutral(M)
+    log_drift = wrightcore.create_neutral_drift(lmcs, lps, M)
+    # Define the drift and mutation transition matrices.
+    P_drift = np.exp(log_drift)
+    P_mut = scipy.linalg.expm(R)
+    # Define the composite per-generation transition matrix.
+    P = np.dot(P_mut, P_drift)
+    # Solve a system of equations to find the stationary distribution.
+    v = MatrixUtil.get_stationary_distribution(P)
+    for state, value in zip(M, v):
+        print state, value
+    # draw an equilateral triangle
+    #drawtri(M, T, v)
+    return M, T, v
+
+
+if __name__ == '__main__':
+    mutrate = 0.01
+    Ma, Ta, va = do_full_simplex_then_collapse(mutrate)
+    Mb, Tb, vb = do_collapsed_simplex(mutrate)
+    print Ma - Mb
+    print Ta - Tb
+    print va - vb
 
