@@ -11,9 +11,9 @@ and uses python numpy arrays for speed and convenience.
 For compilation instructions see
 http://docs.cython.org/src/reference/compilation.html
 For example:
-$ cython -a wfcompens.pyx
+$ cython -a wrightcore.pyx
 $ gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing \
-      -I/usr/include/python2.7 -o wfcompens.so wfcompens.c
+      -I/usr/include/python2.7 -o wrightcore.so wrightcore.c
 """
 
 import numpy as np

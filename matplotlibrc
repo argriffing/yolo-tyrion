@@ -1,0 +1,9 @@
+
+#backend: GTKAgg
+#backend: cairo
+#['GTK', 'GTKAgg', 'GTKCairo', 'FltkAgg', 'MacOSX', 'QtAgg', 'Qt4Agg',
+#'TkAgg', 'WX', 'WXAgg', 'CocoaAgg', 'agg', 'cairo', 'emf', 'gdk', 'pdf',
+#'ps', 'svg', 'template']
+#backend : GTKCairo
+#backend : GTKAgg
+backend : WX
