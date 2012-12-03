@@ -37,13 +37,13 @@ def drawtri(M, T, v):
     plt.show()
 
 
-def do_full_simplex_then_collapse(mutrate):
+def do_full_simplex_then_collapse(mutrate, popsize):
     #mutrate = 0.01
     #mutrate = 0.2
     #mutrate = 10
     #mutrate = 100
     #mutrate = 1
-    N = 20
+    N = popsize
     k = 4
     M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
     T = multinomstate.get_inverse_map(M)
@@ -79,9 +79,9 @@ def do_full_simplex_then_collapse(mutrate):
     #test_mesh()
     return M_collapsed, T_collapsed, v_collapsed
 
-def do_collapsed_simplex(mutrate):
+def do_collapsed_simplex(mutrate, popsize):
     #mutrate = 100
-    N = 20
+    N = popsize
     k = 3
     M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
     T = multinomstate.get_inverse_map(M)
@@ -104,12 +104,21 @@ def do_collapsed_simplex(mutrate):
     #drawtri(M, T, v)
     return M, T, v
 
-
-if __name__ == '__main__':
+def check_collapsed_equilibrium_equivalence():
     mutrate = 0.01
-    Ma, Ta, va = do_full_simplex_then_collapse(mutrate)
-    Mb, Tb, vb = do_collapsed_simplex(mutrate)
+    popsize = 20
+    Ma, Ta, va = do_full_simplex_then_collapse(mutrate, popsize)
+    Mb, Tb, vb = do_collapsed_simplex(mutrate, popsize)
     print Ma - Mb
     print Ta - Tb
     print va - vb
+
+def main():
+    mutrate = 0.01
+    popsize = 50
+    M, T, v = do_collapsed_simplex(mutrate, popsize)
+    drawtri(M, T, v)
+
+if __name__ == '__main__':
+    main()
 
