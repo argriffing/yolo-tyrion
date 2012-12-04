@@ -188,6 +188,11 @@ def do_collapsed_simplex(mutrate, popsize):
     P = np.dot(P_mut, P_drift)
     # Solve a system of equations to find the stationary distribution.
     v = MatrixUtil.get_stationary_distribution(P)
+    # Try a new thing.
+    R_drift = wrightcore.create_moran_drift_rate(M, T) / float(popsize)
+    #FIXME: you should get the stationary distn directly from the rate matrix
+    P = scipy.linalg.expm(R + R_drift)
+    v = MatrixUtil.get_stationary_distribution(P)
     """
     for state, value in zip(M, v):
         print state, value

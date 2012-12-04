@@ -102,6 +102,42 @@ def create_mutation_collapsed(
         R[i, i] = -2*(AB + Ab_aB + ab)
     return R
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+def create_moran_drift_rate(
+        np.ndarray[np.int_t, ndim=2] M,
+        np.ndarray[np.int_t, ndim=3] T,
+        ):
+    """
+    The scaling of the resulting rate matrix is strange.
+    @param M: M[i, j] is the count of allele j in state index i
+    @param T: T[X, Y, Z] is the state index for the given allele counts
+    @return: mutation rate matrix
+    """
+    #FIXME: how to generalize to a rate matrix with more than three alleles
+    #FIXME: without changing the function signature?
+    #FIXME: is cython flexible enough to do this?
+    cdef int i
+    cdef int X, Y, Z
+    cdef int nstates = M.shape[0]
+    cdef np.ndarray[np.float64_t, ndim=2] R = np.zeros((nstates, nstates))
+    for i in range(nstates):
+        X = M[i, 0]
+        Y = M[i, 1]
+        Z = M[i, 2]
+        if X > 0:
+            R[i, T[X-1, Y+1, Z  ]] = X*Y
+            R[i, T[X-1, Y,   Z+1]] = X*Z
+        if Y > 0:
+            R[i, T[X+1, Y-1, Z  ]] = Y*X
+            R[i, T[X,   Y-1, Z+1]] = Y*Z
+        if Z > 0:
+            R[i, T[X+1, Y,   Z-1]] = Z*X
+            R[i, T[X,   Y+1, Z-1]] = Z*Y
+        R[i, i] = -(X*Y + X*Z + Y*X + Y*Z + Z*X + Z*Y)
+    return R
+
 
 #############################################################################
 # These are helper functions for the Wright-Fisher drift component.
