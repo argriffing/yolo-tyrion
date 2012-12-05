@@ -223,6 +223,52 @@ def create_moran_drift_rate_k3(
         R[i, i] = -(X*Y + X*Z + Y*X + Y*Z + Z*X + Z*Y)
     return R
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+def create_moran_drift_rate_k4(
+        np.ndarray[np.int_t, ndim=2] M,
+        np.ndarray[np.int_t, ndim=4] T,
+        ):
+    """
+    The scaling of the resulting rate matrix is strange.
+    @param M: M[i, j] is the count of allele j in state index i
+    @param T: T[X, Y, Z, W] is the state index for the given allele counts
+    @return: mutation rate matrix
+    """
+    #FIXME: this is an unnecessarily dumb way to deal with arbitrary k
+    cdef int i
+    cdef int X, Y, Z, W
+    cdef int nstates = M.shape[0]
+    cdef np.ndarray[np.float64_t, ndim=2] R = np.zeros((nstates, nstates))
+    for i in range(nstates):
+        X = M[i, 0]
+        Y = M[i, 1]
+        Z = M[i, 2]
+        W = M[i, 3]
+        if X > 0:
+            R[i, T[X-1, Y+1, Z  , W  ]] = X*Y
+            R[i, T[X-1, Y  , Z+1, W  ]] = X*Z
+            R[i, T[X-1, Y  , Z  , W+1]] = X*W
+        if Y > 0:
+            R[i, T[X+1, Y-1, Z  , W  ]] = Y*X
+            R[i, T[X  , Y-1, Z+1, W  ]] = Y*Z
+            R[i, T[X  , Y-1, Z  , W+1]] = Y*W
+        if Z > 0:
+            R[i, T[X+1, Y  , Z-1, W  ]] = Z*X
+            R[i, T[X  , Y+1, Z-1, W  ]] = Z*Y
+            R[i, T[X  , Y  , Z-1, W+1]] = Z*W
+        if W > 0:
+            R[i, T[X+1, Y  , Z  , W-1]] = W*X
+            R[i, T[X  , Y+1, Z  , W-1]] = W*Y
+            R[i, T[X  , Y  , Z+1, W-1]] = W*Z
+        R[i, i] = -(
+                X*Y + X*Z + X*W +
+                Y*X + Y*Z + Y*W +
+                Z*X + Z*Y + Z*W +
+                W*X + W*Y + W*Z)
+    return R
+
 
 #############################################################################
 # These are helper functions for the Wright-Fisher drift component.

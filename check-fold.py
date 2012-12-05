@@ -77,12 +77,14 @@ def collapse_diag(N, M, v):
         v_collapsed[j] += v[i]
     return v_collapsed
 
-def distn_helper(M, R_mut):
+def wright_distn_helper(M, T, R_mut):
     """
     @param M: index to states
+    @param T: states to index
     @param R_mut: scaled mutation rate matrix
     @return: stationary distribution of the process
     """
+    #FIXME: remove dependence on T
     lmcs = wrightcore.get_lmcs(M)
     lps = wrightcore.create_selection_neutral(M)
     log_drift = wrightcore.create_neutral_drift(lmcs, lps, M)
@@ -92,41 +94,72 @@ def distn_helper(M, R_mut):
     v = MatrixUtil.get_stationary_distribution(P)
     return v
 
+def get_moran_drift(M, T):
+    #FIXME: this is dumb,
+    #FIXME: but I'm not sure how to use variable-dimension ndarrays in cython
+    k = M.shape[1]
+    if k == 2:
+        return wrightcore.create_moran_drift_rate_k2(M, T)
+    elif k == 3:
+        return wrightcore.create_moran_drift_rate_k3(M, T)
+    elif k == 4:
+        return wrightcore.create_moran_drift_rate_k4(M, T)
+    else:
+        raise NotImplementedError
 
-def get_full_simplex(m_factor, N):
+def moran_distn_helper(M, T, R_mut):
+    """
+    @param M: index to states
+    @param T: states to index
+    @param R_mut: scaled mutation rate matrix
+    @return: stationary distribution of the process
+    """
+    #FIXME: this is dumb,
+    #FIXME: you should get the stationary distn directly from the rate matrix
+    #FIXME: remove dependence on T
+    R_drift = get_moran_drift(M, T)
+    R = R_mut + R_drift
+    P = scipy.linalg.expm(R)
+    v = MatrixUtil.get_stationary_distribution(P)
+    return v
+
+def get_full_simplex(m_factor, N, distn_helper):
     """
     Note that this uses the non-moran formulation of drift.
+    The distn_helper function taken as an argument is expected
+    to be either moran_distn_helper or wright_distn_helper.
     @param m_factor: the mutation rate matrix is multiplied by this number
     @param N: population size
+    @param distn_helper: a function (M, T, R_mut) -> v
     @return: M, T, v
     """
     k = 4
     M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
     T = multinomstate.get_inverse_map(M)
     R_mut = m_factor * wrightcore.create_mutation(M, T)
-    v = distn_helper(M, R_mut)
+    v = distn_helper(M, T, R_mut)
     return M, T, v
 
-def get_collapsed_diamond_process_distn(m_factor, N):
+def get_collapsed_diamond_process_distn(m_factor, N, distn_helper):
     k = 3
     M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
     T = multinomstate.get_inverse_map(M)
     R_mut = m_factor * wrightcore.create_mutation_collapsed(M, T)
-    return distn_helper(M, R_mut)
+    return distn_helper(M, T, R_mut)
 
-def get_collapsed_side_process_distn(m_factor, N):
+def get_collapsed_side_process_distn(m_factor, N, distn_helper):
     k = 2
     M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
     T = multinomstate.get_inverse_map(M)
     R_mut = m_factor * wrightcore.create_mutation_collapsed_side(M, T)
-    return distn_helper(M, R_mut)
+    return distn_helper(M, T, R_mut)
 
-def get_collapsed_diag_process_distn(m_factor, N):
+def get_collapsed_diag_process_distn(m_factor, N, distn_helper):
     k = 2
     M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
     T = multinomstate.get_inverse_map(M)
     R_mut = m_factor * wrightcore.create_mutation_collapsed_diag(M, T)
-    return distn_helper(M, R_mut)
+    return distn_helper(M, T, R_mut)
 
 
 class Test_EquilibriumDistributions(numpy.testing.TestCase):
@@ -141,29 +174,41 @@ class Test_EquilibriumDistributions(numpy.testing.TestCase):
         # multiply the rate matrix by this scaling factor
         m_factor = mu
 
-        # get the discretization and state map and eq distn of the full process
-        M_full, T_full, v_full = get_full_simplex(m_factor, N)
-
-        # compute collapsed distributions explicitly from the full distn
-        v_full_diamond = collapse_diamond(N, M_full, v_full)
-        v_full_diag = collapse_diag(N, M_full, v_full)
-        v_full_side = collapse_side(N, M_full, v_full)
-
-        # compute distributions of collapsed processes
-        v_diamond = get_collapsed_diamond_process_distn(m_factor, N)
-        v_diag = get_collapsed_diag_process_distn(m_factor, N)
-        v_side = get_collapsed_side_process_distn(m_factor, N)
-
-        # compare the distributions
-        for pair in (
-                (v_full_diamond, v_diamond),
-                (v_full_diag, v_diag),
-                (v_full_side, v_side),
+        for drift_name, distn_helper in (
+                ('wright', wright_distn_helper),
+                ('moran', moran_distn_helper),
                 ):
-            numpy.testing.assert_allclose(*pair)
+
+            print 'testing', drift_name, 'drift...'
+
+            # get properties of the full process
+            M_full, T_full, v_full = get_full_simplex(m_factor, N, distn_helper)
+
+            # compute collapsed distributions explicitly from the full distn
+            v_full_diamond = collapse_diamond(N, M_full, v_full)
+            v_full_diag = collapse_diag(N, M_full, v_full)
+            v_full_side = collapse_side(N, M_full, v_full)
+
+            # compute distributions of collapsed processes
+            v_diamond = get_collapsed_diamond_process_distn(
+                    m_factor, N, distn_helper)
+            v_diag = get_collapsed_diag_process_distn(
+                    m_factor, N, distn_helper)
+            v_side = get_collapsed_side_process_distn(
+                    m_factor, N, distn_helper)
+
+            # compare the distributions
+            for pair in (
+                    (v_full_diamond, v_diamond),
+                    (v_full_diag, v_diag),
+                    (v_full_side, v_side),
+                    ):
+                numpy.testing.assert_allclose(*pair)
+
+            print 'finished testing', drift_name, 'drift.'
 
 
-    def test_collapsed_variance(self):
+    def xtest_collapsed_variance(self):
 
         # use standard notation
         Nmu = 1.0
