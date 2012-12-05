@@ -163,6 +163,45 @@ class Test_EquilibriumDistributions(numpy.testing.TestCase):
             numpy.testing.assert_allclose(*pair)
 
 
+    def test_collapsed_variance(self):
+
+        # use standard notation
+        Nmu = 1.0
+        N = 4000
+        mu = Nmu / float(N)
+
+        # multiply the rate matrix by this scaling factor
+        m_factor = mu
+
+        # get the distribution of this collapsed process
+        v_diag = get_collapsed_diag_process_distn(m_factor, N)
+
+        # compute some moments of the distribution
+        m1 = 0.0
+        m2 = 0.0
+        for i, p in enumerate(v_diag):
+            x = i / float(N)
+            m1 += x*p
+            m2 += x*x*p
+
+        # show some expectations
+        print 'E(X) =', m1
+        print 'E(X^2) =', m2
+        print 'V(X) =', m2 - m1*m1
+        print
+        u = 4*N*mu
+        v_expected = 1 / (4 * (2*u + 1))
+        print 'u = 4*N*mu'
+        print 'expected V(X) =', v_expected
+        print
+        u = 2*N*mu
+        v_expected = 1 / (4 * (2*u + 1))
+        print 'u = 2*N*mu'
+        print 'expected V(X) =', v_expected
+        print
+        raise Exception
+
+
 if __name__ == '__main__':
     numpy.testing.run_module_suite()
 
