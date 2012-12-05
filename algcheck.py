@@ -180,7 +180,7 @@ def main():
     print
     #
     lhs = cx1x2_j
-    rhs = ex1x2_j - ex1_j * ex1_j
+    rhs = ex1x2_j - ex1_j * ex2_j
     print 'checking equation:'
     print 'Cov(X_1, X_2) = E(X_1 * X_2) - E(X_1) * E(X_2)'
     print 'lhs:'
@@ -192,7 +192,7 @@ def main():
     print
     #
     lhs = cx1x4_j
-    rhs = ex1x4_j - ex1_j * ex1_j
+    rhs = ex1x4_j - ex1_j * ex4_j
     print 'checking equation:'
     print 'Cov(X_1, X_4) = E(X_1 * X_4) - E(X_1) * E(X_4)'
     print 'lhs:'

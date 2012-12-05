@@ -23,6 +23,9 @@ import pyqtgraph.opengl as gl
 import scipy.ndimage as ndi
 
 def get_xyz(M, T, v):
+    """
+    This is a helper function for visualization.
+    """
     nstates = len(M)
     angles = np.array([0, 1, 2], dtype=float) * (2.0*np.pi / 3.0)
     points = np.array([[np.cos(a), np.sin(a)] for a in angles])
@@ -169,29 +172,36 @@ def do_full_simplex_then_collapse(mutrate, popsize):
     #test_mesh()
     return M_collapsed, T_collapsed, v_collapsed
 
-def do_collapsed_simplex(mutrate, popsize):
-    #mutrate = 100
-    N = popsize
+def do_collapsed_simplex(scaled_mut, N):
+    """
+    @param N: population size
+    """
     k = 3
     M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
     T = multinomstate.get_inverse_map(M)
     # Create the joint site pair mutation rate matrix.
-    R = mutrate * wrightcore.create_mutation_collapsed(M, T)
+    # This is scaled so that there are about popsize mutations per generation.
+    R_mut_raw = wrightcore.create_mutation_collapsed(M, T)
+    R_mut = (scaled_mut / float(N)) * R_mut_raw
     # Create the joint site pair drift transition matrix.
     lmcs = wrightcore.get_lmcs(M)
     lps = wrightcore.create_selection_neutral(M)
-    log_drift = wrightcore.create_neutral_drift(lmcs, lps, M)
+    #log_drift = wrightcore.create_neutral_drift(lmcs, lps, M)
     # Define the drift and mutation transition matrices.
-    P_drift = np.exp(log_drift)
-    P_mut = scipy.linalg.expm(R)
+    #P_drift = np.exp(log_drift)
+    #P_mut = scipy.linalg.expm(R)
     # Define the composite per-generation transition matrix.
-    P = np.dot(P_mut, P_drift)
+    #P = np.dot(P_mut, P_drift)
     # Solve a system of equations to find the stationary distribution.
-    v = MatrixUtil.get_stationary_distribution(P)
+    #v = MatrixUtil.get_stationary_distribution(P)
     # Try a new thing.
-    R_drift = wrightcore.create_moran_drift_rate(M, T) / float(popsize)
+    # The raw drift matrix is scaled so that there are about N*N
+    # replacements per generation.
+    generation_rate = 1.0
+    R_drift_raw = wrightcore.create_moran_drift_rate(M, T)
+    R_drift = (generation_rate / float(N)) * R_drift_raw
     #FIXME: you should get the stationary distn directly from the rate matrix
-    P = scipy.linalg.expm(R + R_drift)
+    P = scipy.linalg.expm(R_mut + R_drift)
     v = MatrixUtil.get_stationary_distribution(P)
     """
     for state, value in zip(M, v):
@@ -211,11 +221,51 @@ def check_collapsed_equilibrium_equivalence():
     print va - vb
 
 def main():
-    scaled_mu = 0.1
+    #scaled_mu = 0.01
+    #scaled_mu = 0.1
+    #scaled_mu = 1.0
+    #scaled_mu = 0.5
+    scaled_mu = 2.0
     #scaled_mu = 10
-    popsize = 60
-    mutrate = scaled_mu / float(popsize)
-    M, T, v = do_collapsed_simplex(mutrate, popsize)
+    N = 50
+    mu = scaled_mu / float(N)
+    M, T, v = do_collapsed_simplex(scaled_mu, N)
+    # check the moments of the distribution
+    m1 = 0.0
+    m2 = 0.0
+    ex1x4 = 0.0
+    for i, p in enumerate(v):
+        x = M[i, 0] / float(N)
+        y = M[i, 2] / float(N)
+        m1 += x*p
+        m2 += x*x*p
+        ex1x4 += x*y*p
+    # compute the second moment according to the formula from jeff
+    a = 8*(N*mu)*(N*mu) + 8*N*mu + 1
+    b = 4*(4*N*mu + 1)*(8*N*mu + 1)
+    em2_j = a/b
+    # compute the covariance of a product of opposite corner state frequencies
+    a = 2*(N*mu)*(N*mu)
+    b = (4*N*mu + 1)*(8*N*mu + 1)
+    ex1x4_j = a/b
+    cx1x2 = -1/(16*(8*N*mu + 1))
+    # compute the second moment as a mixture
+    u = N * mu
+    em2_mix = (u + 1) / (4 * (2*u + 1) )
+    print 'observed E[X_1] =', m1
+    print 'expected E[X_1] = 0.25'
+    print
+    print 'this uses the formula from jeff:'
+    print 'observed E[X_1 ^ 2] =', m2
+    print 'expected E[X_1 ^ 2] =', a/b
+    print
+    print 'this uses the formula from jeff:'
+    print 'observed E[X_1 * X_4] =', ex1x4
+    print 'expected E[X_1 * X_4] =', ex1x4_j
+    print
+    print 'should be better when popsize-scaled mutation is small:'
+    print 'observed E[X_1 ^ 2] =', m2
+    print 'expected E[X_1 ^ 2] =', em2_mix
     #drawtri(M, T, v)
     #show_tri_qtgraph(M, T, v)
     show_tri_qtgraph_mesh(M, T, v)
