@@ -219,6 +219,10 @@ class Test_EquilibriumDistributions(numpy.testing.TestCase):
         # multiply the rate matrix by this scaling factor
         m_factor = mu
 
+        print 'N*mu:', Nmu
+        print 'N:', N
+        print
+
         for drift_name, distn_helper in (
                 ('wright', wright_distn_helper),
                 ('moran', moran_distn_helper),
@@ -238,6 +242,13 @@ class Test_EquilibriumDistributions(numpy.testing.TestCase):
                 m1 += x*p
                 m2 += x*x*p
 
+            # show some expectations
+            print 'E(X) =', m1
+            print 'E(X^2) =', m2
+            print 'V(X) =', m2 - m1*m1
+            print
+
+            """
             # compute some moments of the distribution using midpoint rule
             m1_mid = 0.0
             m2_mid = 0.0
@@ -247,28 +258,24 @@ class Test_EquilibriumDistributions(numpy.testing.TestCase):
                 m1_mid += x*p
                 m2_mid += x*x*p
 
-            # show some expectations
-            print 'using naive calculation:'
-            print 'E(X) =', m1
-            print 'E(X^2) =', m2
-            print 'V(X) =', m2 - m1*m1
-            print
             # show some expectations with midpoint
             print 'using midpoint rule:'
             print 'E(X) =', m1_mid
             print 'E(X^2) =', m2_mid
             print 'V(X) =', m2_mid - m1_mid*m1_mid
             print
-            u = 4*N*mu
-            v_expected = 1 / (4 * (2*u + 1))
-            print 'u = 4*N*mu'
-            print 'expected V(X) =', v_expected
-            print
-            u = 2*N*mu
-            v_expected = 1 / (4 * (2*u + 1))
-            print 'u = 2*N*mu'
-            print 'expected V(X) =', v_expected
-            print
+            """
+
+        u = 4*N*mu
+        v_expected = 1 / (4 * (2*u + 1))
+        print 'u = 4*N*mu'
+        print 'expected V(X) =', v_expected
+        print
+        u = 2*N*mu
+        v_expected = 1 / (4 * (2*u + 1))
+        print 'u = 2*N*mu'
+        print 'expected V(X) =', v_expected
+        print
 
         raise Exception
 
