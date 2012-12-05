@@ -167,7 +167,7 @@ class Test_EquilibriumDistributions(numpy.testing.TestCase):
 
         # use standard notation
         Nmu = 1.0
-        N = 4000
+        N = 1000
         mu = Nmu / float(N)
 
         # multiply the rate matrix by this scaling factor
@@ -184,10 +184,26 @@ class Test_EquilibriumDistributions(numpy.testing.TestCase):
             m1 += x*p
             m2 += x*x*p
 
+        # compute some moments of the distribution using midpoint rule
+        m1_mid = 0.0
+        m2_mid = 0.0
+        for i in range(N-1):
+            x = (i + 0.5) / float(N)
+            p = (v_diag[i] + v_diag[i+1]) / 2
+            m1_mid += x*p
+            m2_mid += x*x*p
+
         # show some expectations
+        print 'using naive calculation:'
         print 'E(X) =', m1
         print 'E(X^2) =', m2
         print 'V(X) =', m2 - m1*m1
+        print
+        # show some expectations with midpoint
+        print 'using midpoint rule:'
+        print 'E(X) =', m1_mid
+        print 'E(X^2) =', m2_mid
+        print 'V(X) =', m2_mid - m1_mid*m1_mid
         print
         u = 4*N*mu
         v_expected = 1 / (4 * (2*u + 1))
