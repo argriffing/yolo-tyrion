@@ -117,7 +117,8 @@ def moran_distn_helper(M, T, R_mut):
     #FIXME: this is dumb,
     #FIXME: you should get the stationary distn directly from the rate matrix
     #FIXME: remove dependence on T
-    R_drift = get_moran_drift(M, T)
+    N = np.sum(M[0])
+    R_drift = 0.5 * get_moran_drift(M, T) / float(N)
     R = R_mut + R_drift
     P = scipy.linalg.expm(R)
     v = MatrixUtil.get_stationary_distribution(P)
@@ -208,7 +209,7 @@ class Test_EquilibriumDistributions(numpy.testing.TestCase):
             print 'finished testing', drift_name, 'drift.'
 
 
-    def xtest_collapsed_variance(self):
+    def test_collapsed_variance(self):
 
         # use standard notation
         Nmu = 1.0
@@ -218,48 +219,57 @@ class Test_EquilibriumDistributions(numpy.testing.TestCase):
         # multiply the rate matrix by this scaling factor
         m_factor = mu
 
-        # get the distribution of this collapsed process
-        v_diag = get_collapsed_diag_process_distn(m_factor, N)
+        for drift_name, distn_helper in (
+                ('wright', wright_distn_helper),
+                ('moran', moran_distn_helper),
+                ):
 
-        # compute some moments of the distribution
-        m1 = 0.0
-        m2 = 0.0
-        for i, p in enumerate(v_diag):
-            x = i / float(N)
-            m1 += x*p
-            m2 += x*x*p
+            print 'checking properties of', drift_name, 'drift...'
 
-        # compute some moments of the distribution using midpoint rule
-        m1_mid = 0.0
-        m2_mid = 0.0
-        for i in range(N-1):
-            x = (i + 0.5) / float(N)
-            p = (v_diag[i] + v_diag[i+1]) / 2
-            m1_mid += x*p
-            m2_mid += x*x*p
+            # get the distribution of this collapsed process
+            v_diag = get_collapsed_diag_process_distn(
+                    m_factor, N, distn_helper)
 
-        # show some expectations
-        print 'using naive calculation:'
-        print 'E(X) =', m1
-        print 'E(X^2) =', m2
-        print 'V(X) =', m2 - m1*m1
-        print
-        # show some expectations with midpoint
-        print 'using midpoint rule:'
-        print 'E(X) =', m1_mid
-        print 'E(X^2) =', m2_mid
-        print 'V(X) =', m2_mid - m1_mid*m1_mid
-        print
-        u = 4*N*mu
-        v_expected = 1 / (4 * (2*u + 1))
-        print 'u = 4*N*mu'
-        print 'expected V(X) =', v_expected
-        print
-        u = 2*N*mu
-        v_expected = 1 / (4 * (2*u + 1))
-        print 'u = 2*N*mu'
-        print 'expected V(X) =', v_expected
-        print
+            # compute some moments of the distribution
+            m1 = 0.0
+            m2 = 0.0
+            for i, p in enumerate(v_diag):
+                x = i / float(N)
+                m1 += x*p
+                m2 += x*x*p
+
+            # compute some moments of the distribution using midpoint rule
+            m1_mid = 0.0
+            m2_mid = 0.0
+            for i in range(N-1):
+                x = (i + 0.5) / float(N)
+                p = (v_diag[i] + v_diag[i+1]) / 2
+                m1_mid += x*p
+                m2_mid += x*x*p
+
+            # show some expectations
+            print 'using naive calculation:'
+            print 'E(X) =', m1
+            print 'E(X^2) =', m2
+            print 'V(X) =', m2 - m1*m1
+            print
+            # show some expectations with midpoint
+            print 'using midpoint rule:'
+            print 'E(X) =', m1_mid
+            print 'E(X^2) =', m2_mid
+            print 'V(X) =', m2_mid - m1_mid*m1_mid
+            print
+            u = 4*N*mu
+            v_expected = 1 / (4 * (2*u + 1))
+            print 'u = 4*N*mu'
+            print 'expected V(X) =', v_expected
+            print
+            u = 2*N*mu
+            v_expected = 1 / (4 * (2*u + 1))
+            print 'u = 2*N*mu'
+            print 'expected V(X) =', v_expected
+            print
+
         raise Exception
 
 
