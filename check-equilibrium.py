@@ -198,7 +198,7 @@ def do_collapsed_simplex(scaled_mut, N):
     # The raw drift matrix is scaled so that there are about N*N
     # replacements per generation.
     generation_rate = 1.0
-    R_drift_raw = wrightcore.create_moran_drift_rate(M, T)
+    R_drift_raw = wrightcore.create_moran_drift_rate_k3(M, T)
     R_drift = (generation_rate / float(N)) * R_drift_raw
     #FIXME: you should get the stationary distn directly from the rate matrix
     P = scipy.linalg.expm(R_mut + R_drift)

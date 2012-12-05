@@ -104,8 +104,93 @@ def create_mutation_collapsed(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+def create_mutation_collapsed_diag(
+        np.ndarray[np.int_t, ndim=2] M,
+        np.ndarray[np.int_t, ndim=2] T,
+        ):
+    """
+    The scaling of the resulting rate matrix is strange.
+    Every rate is an integer, but in double precision float format.
+    @param M: M[i, j] is the count of allele j in state index i
+    @param T: T[AB_ab, Ab_aB] is the state index for the given allele counts
+    @return: mutation rate matrix
+    """
+    cdef int i
+    cdef int AB_ab, Ab_aB
+    cdef int nstates = M.shape[0]
+    cdef np.ndarray[np.float64_t, ndim=2] R = np.zeros((nstates, nstates))
+    for i in range(nstates):
+        # meticulously unpack the allele counts from the corresponding state
+        AB_ab = M[i, 0]
+        Ab_aB = M[i, 1]
+        #
+        if AB_ab > 0:
+            R[i, T[AB_ab-1, Ab_aB+1]] = 2*AB_ab
+        if Ab_aB > 0:
+            R[i, T[AB_ab+1, Ab_aB-1]] = 2*Ab_aB
+        R[i, i] = -2*(AB_ab + Ab_aB)
+    return R
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def create_mutation_collapsed_side(
+        np.ndarray[np.int_t, ndim=2] M,
+        np.ndarray[np.int_t, ndim=2] T,
+        ):
+    """
+    The scaling of the resulting rate matrix is strange.
+    Every rate is an integer, but in double precision float format.
+    @param M: M[i, j] is the count of allele j in state index i
+    @param T: T[AB_Ab, aB_ab] is the state index for the given allele counts
+    @return: mutation rate matrix
+    """
+    cdef int i
+    cdef int AB_Ab, aB_ab
+    cdef int nstates = M.shape[0]
+    cdef np.ndarray[np.float64_t, ndim=2] R = np.zeros((nstates, nstates))
+    for i in range(nstates):
+        # meticulously unpack the allele counts from the corresponding state
+        AB_Ab = M[i, 0]
+        aB_ab = M[i, 1]
+        #
+        if AB_Ab > 0:
+            R[i, T[AB_Ab-1, aB_ab+1]] = AB_Ab
+        if aB_ab > 0:
+            R[i, T[AB_Ab+1, aB_ab-1]] = aB_ab
+        R[i, i] = -(AB_Ab + aB_ab)
+    return R
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 @cython.cdivision(True)
-def create_moran_drift_rate(
+def create_moran_drift_rate_k2(
+        np.ndarray[np.int_t, ndim=2] M,
+        np.ndarray[np.int_t, ndim=2] T,
+        ):
+    """
+    The scaling of the resulting rate matrix is strange.
+    @param M: M[i, j] is the count of allele j in state index i
+    @param T: T[X, Y] is the state index for the given allele counts
+    @return: mutation rate matrix
+    """
+    cdef int i
+    cdef int X, Y
+    cdef int nstates = M.shape[0]
+    cdef np.ndarray[np.float64_t, ndim=2] R = np.zeros((nstates, nstates))
+    for i in range(nstates):
+        X = M[i, 0]
+        Y = M[i, 1]
+        if X > 0:
+            R[i, T[X-1, Y+1]] = X*Y
+        if Y > 0:
+            R[i, T[X+1, Y-1]] = Y*X
+        R[i, i] = -(X*Y + Y*X)
+    return R
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+def create_moran_drift_rate_k3(
         np.ndarray[np.int_t, ndim=2] M,
         np.ndarray[np.int_t, ndim=3] T,
         ):
