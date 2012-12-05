@@ -213,7 +213,7 @@ class Test_EquilibriumDistributions(numpy.testing.TestCase):
 
         # use standard notation
         Nmu = 1.0
-        N = 1000
+        N = 100
         mu = Nmu / float(N)
 
         # multiply the rate matrix by this scaling factor
