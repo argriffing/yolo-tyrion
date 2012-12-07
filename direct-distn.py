@@ -88,63 +88,99 @@ def get_simplex_d4_symmetry_constraints(M, T):
 def get_beta_approx(npoints, alpha):
     """
     These are normalized likelihoods from a beta function pdf.
+    Speed does not matter.
     @param N: evaluate this many equally spaced points on [0, 1]
     @param alpha: beta distribution concentration parameter
     @return: a discrete distribution
     """
     x = np.linspace(0, 1, npoints)
-    x = scipy.stats.beta.pdf(x, alpha, alpha)
-    return x / np.sum(x)
+    y = scipy.stats.beta.pdf(x, alpha, alpha)
+    return y / np.sum(y)
 
-def get_errors(M, v, approx_1a, approx_2a):
+def get_design_matrix_side(M):
+    """
+    Precompute a matrix to help compute a marginal distribution.
+    Speed does not matter.
+    """
+    nstates = len(M)
+    N = np.sum(M[0])
+    X = np.zeros((nstates, N+1), dtype=int)
+    for i, state in enumerate(M):
+        AB, Ab, aB, ab = M[i].tolist()
+        X[i, AB + Ab] = 1
+    return X
+
+def get_design_matrix_diag(M):
+    """
+    Precompute a matrix to help compute a marginal distribution.
+    Speed does not matter.
+    """
+    nstates = len(M)
+    N = np.sum(M[0])
+    X = np.zeros((nstates, N+1), dtype=int)
+    for i, state in enumerate(M):
+        AB, Ab, aB, ab = M[i].tolist()
+        X[i, AB + ab] = 1
+    return X
+
+def get_errors(M, v, approx_1a, approx_2a, X_side, X_diag):
     nstates = len(M)
     N = np.sum(M[0])
     observed_1a_1 = algopy.zeros(N+1, dtype=v)
-    observed_1a_2 = algopy.zeros(N+1, dtype=v)
+    #observed_1a_2 = algopy.zeros(N+1, dtype=v)
     observed_2a = algopy.zeros(N+1, dtype=v)
+    """
     for i in range(nstates):
         p = v[i]
         AB, Ab, aB, ab = M[i].tolist()
         observed_1a_1[AB + Ab] += p
-        observed_1a_2[AB + aB] += p
+        #observed_1a_2[AB + aB] += p
         #observed_2a[AB + ab] += p
         observed_2a[Ab + aB] += p
+    """
+    observed_1a_1 = algopy.dot(v, X_side)
+    observed_2a = algopy.dot(v, X_diag)
+    #
     errors_1a_1 = observed_1a_1 - approx_1a
-    errors_1a_2 = observed_1a_2 - approx_1a
+    #errors_1a_2 = observed_1a_2 - approx_1a
     errors_2a = observed_2a - approx_2a
     #FIXME: Use algopy.hstack when it becomes available.
     #FIXME: using the workaround http://projects.scipy.org/scipy/ticket/1454
     #FIXME: but this padding of the errors with zeros should not be necessary
-    #nconstraints = max(nvars, len(errors_1a) + len(errors_2a))
-    nonunif_penalty = 0.01
+    #nonunif_penalty = 0.01
     #nonunif = v - np.ones(nstates) / float(nstates)
-    nonunif = np.zeros(nstates)
+    #nonunif = np.zeros(nstates)
     errors = algopy.zeros(
-            len(errors_1a_1) + len(errors_1a_2) + len(errors_2a) + len(nonunif),
+            #len(nonunif) +
+            len(errors_1a_1) +
+            #len(errors_1a_2) +
+            len(errors_2a),
             dtype=v,
             )
     index = 0
     errors[index:index+len(errors_1a_1)] = errors_1a_1
     index += len(errors_1a_1)
-    errors[index:index+len(errors_1a_2)] = errors_1a_2
-    index += len(errors_1a_2)
+    #errors[index:index+len(errors_1a_2)] = errors_1a_2
+    #index += len(errors_1a_2)
     errors[index:index+len(errors_2a)] = errors_2a
     index += len(errors_2a)
-    errors[index:index+len(nonunif)] = nonunif_penalty * nonunif
-    index += len(nonunif)
+    #errors[index:index+len(nonunif)] = nonunif_penalty * nonunif
+    #index += len(nonunif)
     return errors
 
 
 
 def eval_f(
         M, T, d4_reduction, d4_nstates, approx_1a, approx_2a,
+        X_side, X_diag,
         X,
         ):
     """
     This algopy-enabled function should be callable from leastsq.
-    The first group of args should be partially evaluated.
+    The first two groups of args should be partially evaluated.
     The M and T args are related to the discretization of a simplex volume.
     The d4 args are related to symmetries of a function on the simplex.
+    The X_side and X_diag args are precomputed design matrices.
     The last arg is a vector of logs of parameter values.
     @param M: full index to state vector
     @param T: state vector to full index
@@ -164,7 +200,7 @@ def eval_f(
 
     # unpack the parameter values into a d4 symmetric joint distribution
     v = unpack_distribution(nstates, d4_reduction, d4_nstates, X)
-    errors = get_errors(M, v, approx_1a, approx_2a)
+    errors = get_errors(M, v, approx_1a, approx_2a, X_side, X_diag)
     return errors
 
 
@@ -220,9 +256,17 @@ def main():
     # for the initial guess all logs of ratios of probs are zero
     x0 = np.zeros(d4_nstates - 1)
 
+    # precompute some design matrices
+    X_side = get_design_matrix_side(M)
+    X_diag = get_design_matrix_diag(M)
+
+    print 'number of variables:', d4_nstates - 1
+    print
+
     f_errors = functools.partial(
             eval_f,
             M, T, d4_reduction, d4_nstates, approx_1a, approx_2a,
+            X_side, X_diag,
             )
 
     g_errors = functools.partial(eval_grad, f_errors)
