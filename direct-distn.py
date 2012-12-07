@@ -123,9 +123,57 @@ def eval_f(
     N = np.sum(M[0])
 
     # get the number of full states without symmetry reduction
+    nvars = len(X)
     nstates = len(M)
 
     # unpack the parameter values into a d4 symmetric joint distribution
+    v = unpack_distribution(nstates, d4_reduction, d4_nstates, X)
+
+    # compute the marginal distribution errors
+    observed_1a_1 = algopy.zeros(N+1, dtype=X)
+    observed_1a_2 = algopy.zeros(N+1, dtype=X)
+    observed_2a = algopy.zeros(N+1, dtype=X)
+    for p, state in zip(v, M):
+        AB, Ab, aB, ab = state.tolist()
+        observed_1a_1[AB + Ab] += p
+        observed_1a_2[AB + aB] += p
+        #observed_2a[AB + ab] += p
+        observed_2a[Ab + aB] += p
+    errors_1a_1 = observed_1a_1 - approx_1a
+    errors_1a_2 = observed_1a_2 - approx_1a
+    errors_2a = observed_2a - approx_2a
+    #FIXME: Use algopy.hstack when it becomes available.
+    #FIXME: using the workaround http://projects.scipy.org/scipy/ticket/1454
+    #FIXME: but this padding of the errors with zeros should not be necessary
+    #nconstraints = max(nvars, len(errors_1a) + len(errors_2a))
+    nonunif_penalty = 0.01
+    #nonunif = v - np.ones(nstates) / float(nstates)
+    nonunif = np.zeros(nstates)
+    errors = algopy.zeros(
+            len(errors_1a_1) + len(errors_1a_2) + len(errors_2a) + len(nonunif),
+            dtype=X,
+            )
+    index = 0
+    errors[index:index+len(errors_1a_1)] = errors_1a_1
+    index += len(errors_1a_1)
+    errors[index:index+len(errors_1a_2)] = errors_1a_2
+    index += len(errors_1a_2)
+    errors[index:index+len(errors_2a)] = errors_2a
+    index += len(errors_2a)
+    errors[index:index+len(nonunif)] = nonunif_penalty * nonunif
+    index += len(nonunif)
+    return errors
+
+
+def eval_grad(f, theta):
+    theta = algopy.UTPM.init_jacobian(theta)
+    return algopy.UTPM.extract_jacobian(f(theta))
+
+def eval_hess(f, theta):
+    theta = algopy.UTPM.init_hessian(theta)
+    return algopy.UTPM.extract_hessian(len(theta), f(theta))
+
+def unpack_distribution(nstates, d4_reduction, d4_nstates, X):
     log_v = algopy.zeros(nstates, dtype=X)
     for i_full, i_reduced in enumerate(d4_reduction):
         if i_reduced == d4_nstates - 1:
@@ -134,32 +182,19 @@ def eval_f(
             log_v[i_full] = X[i_reduced]
     v = algopy.exp(log_v)
     v = v / algopy.sum(v)
+    return v
 
-    # compute the marginal distribution errors
-    observed_1a = algopy.zeros(N+1, dtype=X)
-    observed_2a = algopy.zeros(N+1, dtype=X)
-    for p, state in zip(v, M):
-        AB, Ab, aB, ab = state.tolist()
-        observed_1a[AB + Ab] += p
-        observed_2a[AB + ab] += p
-    errors_1a = observed_1a - approx_1a
-    errors_2a = observed_2a - approx_2a
-    #FIXME: use algopy.hstack when it becomes available
-    errors = algopy.zeros(len(errors_1a) + len(errors_2a), dtype=X)
-    errors[:len(errors_1a)] = errors_1a
-    errors[-len(errors_2a):] = errors_2a
-    return errors
-
-
-def eval_grad(f, theta):
-    theta = algopy.UTPM.init_jacobian(theta)
-    return algopy.UTPM.extract_jacobian(f(theta))
+def apply_sum_of_squares(f, X):
+    errors = f(X)
+    sse = algopy.dot(errors, errors)
+    print sse
+    return sse
 
 def main():
 
     # use standard notation
     Nmu = 1.0
-    N = 5
+    N = 20
     mu = Nmu / float(N)
 
     print 'N*mu:', Nmu
@@ -169,6 +204,7 @@ def main():
     k = 4
     M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
     T = multinomstate.get_inverse_map(M)
+    nstates = len(M)
     #R_mut = m_factor * wrightcore.create_mutation_collapsed(M, T)
     #v = distn_helper(M, T, R_mut)
 
@@ -178,22 +214,112 @@ def main():
     approx_2a = get_beta_approx(N+1, 2*alpha)
 
     d4_reduction, d4_nstates = get_d4_reduction(M, T)
-    v_uniform = np.ones(d4_nstates - 1) / float(d4_nstates - 1)
-    x0 = v_uniform
+    # for the initial guess all logs of ratios of probs are zero
+    x0 = np.zeros(d4_nstates - 1)
 
-    f = functools.partial(
+    f_errors = functools.partial(
             eval_f,
             M, T, d4_reduction, d4_nstates, approx_1a, approx_2a,
             )
 
-    g = functools.partial(eval_grad, f)
+    g_errors = functools.partial(eval_grad, f_errors)
 
+    f = functools.partial(apply_sum_of_squares, f_errors)
+    g = functools.partial(eval_grad, f)
+    h = functools.partial(eval_hess, f)
+
+    """
     result = scipy.optimize.leastsq(
-            f,
+            f_errors,
             x0,
             Dfun=g,
+            full_output=1,
             )
+    """
+
+    """
+    result = scipy.optimize.fmin_ncg(
+            f,
+            x0,
+            fprime=g,
+            fhess=h,
+            avextol=1e-6,
+            full_output=True,
+            )
+    """
+
+    result = scipy.optimize.fmin_bfgs(
+            f,
+            x0,
+            fprime=g,
+            #fhess=h,
+            #avextol=1e-6,
+            full_output=True,
+            )
+
     print result
+
+    xopt = result[0]
+
+    v = unpack_distribution(nstates, d4_reduction, d4_nstates, xopt)
+
+    # print some variances
+    check_variance(M, T, v)
+
+
+#FIXME: mostly copypasted from check-folds.py
+def collapse_diamond(N, M, v):
+    """
+    Collapse the middle two states.
+    @param N: population size
+    @param M: index to state vector
+    @param v: a distribution over a 3-simplex
+    @return: a distribution over a 2-simplex
+    """
+    k = 4
+    nstates_collapsed = multinomstate.get_nstates(N, k-1)
+    M_collapsed = np.array(list(multinomstate.gen_states(N, k-1)), dtype=int)
+    T_collapsed = multinomstate.get_inverse_map(M_collapsed)
+    v_collapsed = np.zeros(nstates_collapsed)
+    for i, bigstate in enumerate(M):
+        AB, Ab, aB, ab = bigstate.tolist()
+        Ab_aB = Ab + aB
+        j = T_collapsed[AB, Ab_aB, ab]
+        v_collapsed[j] += v[i]
+    return M_collapsed, T_collapsed, v_collapsed
+
+#FIXME: mostly copypasted from check-diamond.py
+def check_variance(M, T, v):
+    N = np.sum(M[0])
+    M_collapsed, T_collapsed, v_collapsed = collapse_diamond(N, M, v)
+    for Ab_aB in range(N+1):
+        nremaining = N - Ab_aB
+        # compute the volume for normalization
+        volume = 0.0
+        for AB in range(nremaining+1):
+            ab = nremaining - AB
+            volume += v_collapsed[T_collapsed[AB, Ab_aB, ab]]
+        # print some info
+        print 'X_1 + X_4 =', Ab_aB, '/', N
+        print 'probability =', volume
+        print 'Y = X_2 / (1 - (X_1 + X_4)) = X_2 / (X_2 + X_3)'
+        if not nremaining:
+            print 'conditional distribution of Y is undefined'
+        else:
+            # compute the conditional moments
+            m1 = 0.0
+            m2 = 0.0
+            for AB in range(nremaining+1):
+                ab = nremaining - AB
+                p = v_collapsed[T_collapsed[AB, Ab_aB, ab]] / volume
+                x = AB / float(nremaining)
+                m1 += x*p
+                m2 += x*x*p
+            # print some info
+            print 'conditional E(Y) =', m1
+            print 'conditional E(Y^2) =', m2
+            print 'conditional V(Y) =', m2 - m1*m1
+        print
 
 if __name__ == '__main__':
     main()
