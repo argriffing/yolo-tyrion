@@ -93,8 +93,47 @@ def get_beta_approx(npoints, alpha):
     @return: a discrete distribution
     """
     x = np.linspace(0, 1, npoints)
-    scipy.stats.beta.pdf(x, alpha, alpha)
+    x = scipy.stats.beta.pdf(x, alpha, alpha)
     return x / np.sum(x)
+
+def get_errors(M, v, approx_1a, approx_2a):
+    nstates = len(M)
+    N = np.sum(M[0])
+    observed_1a_1 = algopy.zeros(N+1, dtype=v)
+    observed_1a_2 = algopy.zeros(N+1, dtype=v)
+    observed_2a = algopy.zeros(N+1, dtype=v)
+    for i in range(nstates):
+        p = v[i]
+        AB, Ab, aB, ab = M[i].tolist()
+        observed_1a_1[AB + Ab] += p
+        observed_1a_2[AB + aB] += p
+        #observed_2a[AB + ab] += p
+        observed_2a[Ab + aB] += p
+    errors_1a_1 = observed_1a_1 - approx_1a
+    errors_1a_2 = observed_1a_2 - approx_1a
+    errors_2a = observed_2a - approx_2a
+    #FIXME: Use algopy.hstack when it becomes available.
+    #FIXME: using the workaround http://projects.scipy.org/scipy/ticket/1454
+    #FIXME: but this padding of the errors with zeros should not be necessary
+    #nconstraints = max(nvars, len(errors_1a) + len(errors_2a))
+    nonunif_penalty = 0.01
+    #nonunif = v - np.ones(nstates) / float(nstates)
+    nonunif = np.zeros(nstates)
+    errors = algopy.zeros(
+            len(errors_1a_1) + len(errors_1a_2) + len(errors_2a) + len(nonunif),
+            dtype=v,
+            )
+    index = 0
+    errors[index:index+len(errors_1a_1)] = errors_1a_1
+    index += len(errors_1a_1)
+    errors[index:index+len(errors_1a_2)] = errors_1a_2
+    index += len(errors_1a_2)
+    errors[index:index+len(errors_2a)] = errors_2a
+    index += len(errors_2a)
+    errors[index:index+len(nonunif)] = nonunif_penalty * nonunif
+    index += len(nonunif)
+    return errors
+
 
 
 def eval_f(
@@ -119,49 +158,13 @@ def eval_f(
     if len(X) != d4_nstates - 1:
         raise Exception
 
-    # get the population size
-    N = np.sum(M[0])
-
-    # get the number of full states without symmetry reduction
-    nvars = len(X)
+    # get the number of states and the population size
     nstates = len(M)
+    N = np.sum(M[0])
 
     # unpack the parameter values into a d4 symmetric joint distribution
     v = unpack_distribution(nstates, d4_reduction, d4_nstates, X)
-
-    # compute the marginal distribution errors
-    observed_1a_1 = algopy.zeros(N+1, dtype=X)
-    observed_1a_2 = algopy.zeros(N+1, dtype=X)
-    observed_2a = algopy.zeros(N+1, dtype=X)
-    for p, state in zip(v, M):
-        AB, Ab, aB, ab = state.tolist()
-        observed_1a_1[AB + Ab] += p
-        observed_1a_2[AB + aB] += p
-        #observed_2a[AB + ab] += p
-        observed_2a[Ab + aB] += p
-    errors_1a_1 = observed_1a_1 - approx_1a
-    errors_1a_2 = observed_1a_2 - approx_1a
-    errors_2a = observed_2a - approx_2a
-    #FIXME: Use algopy.hstack when it becomes available.
-    #FIXME: using the workaround http://projects.scipy.org/scipy/ticket/1454
-    #FIXME: but this padding of the errors with zeros should not be necessary
-    #nconstraints = max(nvars, len(errors_1a) + len(errors_2a))
-    nonunif_penalty = 0.01
-    #nonunif = v - np.ones(nstates) / float(nstates)
-    nonunif = np.zeros(nstates)
-    errors = algopy.zeros(
-            len(errors_1a_1) + len(errors_1a_2) + len(errors_2a) + len(nonunif),
-            dtype=X,
-            )
-    index = 0
-    errors[index:index+len(errors_1a_1)] = errors_1a_1
-    index += len(errors_1a_1)
-    errors[index:index+len(errors_1a_2)] = errors_1a_2
-    index += len(errors_1a_2)
-    errors[index:index+len(errors_2a)] = errors_2a
-    index += len(errors_2a)
-    errors[index:index+len(nonunif)] = nonunif_penalty * nonunif
-    index += len(nonunif)
+    errors = get_errors(M, v, approx_1a, approx_2a)
     return errors
 
 
@@ -232,7 +235,7 @@ def main():
     result = scipy.optimize.leastsq(
             f_errors,
             x0,
-            Dfun=g,
+            Dfun=g_errors,
             full_output=1,
             )
     """
