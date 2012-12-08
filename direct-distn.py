@@ -152,18 +152,18 @@ def get_errors(M, v, approx_1a, approx_2a, X_side, X_diag):
     #nonunif = np.zeros(nstates)
     errors = algopy.zeros(
             #len(nonunif) +
-            len(errors_1a_1) +
+            errors_1a_1.shape[0] +
             #len(errors_1a_2) +
-            len(errors_2a),
+            errors_2a.shape[0],
             dtype=v,
             )
     index = 0
-    errors[index:index+len(errors_1a_1)] = errors_1a_1
-    index += len(errors_1a_1)
+    errors[index:index+errors_1a_1.shape[0]] = errors_1a_1
+    index += errors_1a_1.shape[0]
     #errors[index:index+len(errors_1a_2)] = errors_1a_2
     #index += len(errors_1a_2)
-    errors[index:index+len(errors_2a)] = errors_2a
-    index += len(errors_2a)
+    errors[index:index+errors_2a.shape[0]] = errors_2a
+    index += errors_2a.shape[0]
     #errors[index:index+len(nonunif)] = nonunif_penalty * nonunif
     #index += len(nonunif)
     return errors
@@ -191,7 +191,7 @@ def eval_f(
     @param X: parameter values
     @return: vector of errors whose squares are to be minimized
     """
-    if len(X) != d4_nstates - 1:
+    if X.shape[0] != d4_nstates - 1:
         raise Exception
 
     # get the number of states and the population size
@@ -211,6 +211,21 @@ def eval_grad(f, theta):
 def eval_hess(f, theta):
     theta = algopy.UTPM.init_hessian(theta)
     return algopy.UTPM.extract_hessian(len(theta), f(theta))
+
+def eval_grad_reverse_mode(f, x):
+    cg = algopy.CGraph()
+    x = algopy.Function(x)
+    y = f(x)
+    cg.trace_off()
+    cg.indepndentFunctionList = [x]
+    cg.dependentFunctionList = [y]
+    #cg.plot('omg.png')
+    #result = cg.gradient([x])
+    #print 'reverse mode gradient:'
+    result = cg.jacobian(x)
+    print 'reverse mode jacobian:'
+    print result
+    return result
 
 def unpack_distribution(nstates, d4_reduction, d4_nstates, X):
     log_v = algopy.zeros(nstates, dtype=X)
@@ -275,6 +290,8 @@ def main():
     g = functools.partial(eval_grad, f)
     h = functools.partial(eval_hess, f)
 
+    g_reverse = functools.partial(eval_grad_reverse_mode, f)
+
     """
     result = scipy.optimize.leastsq(
             f_errors,
@@ -298,9 +315,8 @@ def main():
     result = scipy.optimize.fmin_bfgs(
             f,
             x0,
-            fprime=g,
-            #fhess=h,
-            #avextol=1e-6,
+            #fprime=g,
+            fprime=g_reverse,
             full_output=True,
             )
 
