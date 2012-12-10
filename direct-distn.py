@@ -214,15 +214,15 @@ def eval_hess(f, theta):
 
 def eval_grad_reverse_mode(f, x):
     cg = algopy.CGraph()
-    x = algopy.Function(x)
-    y = f(x)
+    fx = algopy.Function(x)
+    fy = f(x)
     cg.trace_off()
-    cg.indepndentFunctionList = [x]
-    cg.dependentFunctionList = [y]
+    cg.indepndentFunctionList = [fx]
+    cg.dependentFunctionList = [fy]
     #cg.plot('omg.png')
     #result = cg.gradient([x])
     #print 'reverse mode gradient:'
-    result = cg.jacobian(x)
+    result = cg.jacobian(fx)
     print 'reverse mode jacobian:'
     print result
     return result
