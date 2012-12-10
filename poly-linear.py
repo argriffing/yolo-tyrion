@@ -93,7 +93,7 @@ def get_contrast_moment_matrix(N, is_minimal=False):
     return M
 
 
-def main(args):
+def submain_pseudoinverse(args):
     N = args.N
 
     # Construct two arrays each with 4**N rows.
@@ -115,6 +115,14 @@ def main(args):
     print
     print 'pseudoinverse of R:'
     print scipy.linalg.pinv(R)
+
+def main(args):
+    #submain_pseudoinverse(args)
+    for N in range(1, 10):
+        # this is like http://oeis.org/A005232
+        print N
+        print len(get_canonical_tuples(N))
+        print
 
 
 if __name__ == '__main__':
