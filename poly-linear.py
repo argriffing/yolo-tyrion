@@ -12,37 +12,6 @@ import itertools
 import numpy as np
 import scipy.linalg
 
-
-def get_d4_reduction(M, T):
-    """
-    @param M: index to state vector
-    @param T: state vector to index
-    @return: map from full to reduced state index, number of reduced states
-    """
-    nstates = len(M)
-    nstates_reduced = 0
-    full_index_to_reduced_index = -1 * np.ones(nstates, dtype=int)
-    for i, full_state in enumerate(M):
-        AB, Ab, aB, ab = full_state.tolist()
-        equivalent_states = (
-                (AB, Ab, aB, ab), # original
-                (Ab, AB, ab, aB), # B <--> b
-                (aB, ab, AB, Ab), # A <--> a
-                (ab, aB, Ab, AB), # B <--> b and A <--> a
-                (AB, aB, Ab, ab), # flip middle two
-                (Ab, ab, AB, aB), # flip and B <--> b
-                (aB, AB, ab, Ab), # flip and A <--> a
-                (ab, Ab, aB, AB), # flip and B <--> b and A <--> a
-                )
-        canonical_state = min(equivalent_states)
-        canonical_full_index = T[canonical_state]
-        if full_index_to_reduced_index[canonical_full_index] == -1:
-            full_index_to_reduced_index[canonical_full_index] = nstates_reduced
-            nstates_reduced += 1
-        reduced_index = full_index_to_reduced_index[canonical_full_index]
-        full_index_to_reduced_index[i] = reduced_index
-    return full_index_to_reduced_index, nstates_reduced
-
 def gen_equivalent_tuples(x):
     """
     @param x: a tuple of state indices
@@ -91,21 +60,32 @@ def get_indicator_matrix(N):
         M[i, T[get_canonical_tuple(t)]] = 1
     return M
 
-def get_contrast_moment_matrix(N):
+def get_contrast_moment_matrix(N, is_minimal=False):
     """
-    The seven columns of this matrix correspond to seven contrasts.
+    The seven columns of the returned ndarray correspond to seven contrasts.
     Well one of the contrasts is not actually a contrast.
-    Some of these columns may be redundant.
+    And some of the columns of the returned ndarray may be redundant.
     """
-    contrasts = np.array([
-        [+1, +1, +1, +1],
-        [+1, +1, -1, -1],
-        #[+1, -1, +1, -1],
-        [+1, -1, -1, +1],
-        #[-1, +1, +1, -1],
-        #[-1, +1, -1, +1],
-        #[-1, -1, +1, +1],
-        ], dtype=int)
+    if is_minimal:
+        contrasts = np.array([
+            [+1, +1, +1, +1],
+            [+1, +1, -1, -1],
+            #[+1, -1, +1, -1],
+            [+1, -1, -1, +1],
+            #[-1, +1, +1, -1],
+            #[-1, +1, -1, +1],
+            #[-1, -1, +1, +1],
+            ], dtype=int)
+    else:
+        contrasts = np.array([
+            [+1, +1, +1, +1],
+            [+1, +1, -1, -1],
+            [+1, -1, +1, -1],
+            [+1, -1, -1, +1],
+            [-1, +1, +1, -1],
+            [-1, +1, -1, +1],
+            [-1, -1, +1, +1],
+            ], dtype=int)
     M = np.zeros((4**N, len(contrasts)), dtype=int)
     for i, t in enumerate(N_to_tuples(N)):
         for j, c in enumerate(contrasts):
@@ -123,7 +103,7 @@ def main(args):
     # corresponding to symmetries among moments.
     print get_canonical_tuples(N)
     X = get_indicator_matrix(N)
-    M = get_contrast_moment_matrix(N)
+    M = get_contrast_moment_matrix(N, args.minimal_contrasts)
     print X
     print M
     R = np.dot(M.T, X)
@@ -141,5 +121,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--N', default=3, type=int,
             help='moments of this order')
+    parser.add_argument('--minimal-contrasts', action='store_true',
+            help='use only three moment equations')
     main(parser.parse_args())
 
