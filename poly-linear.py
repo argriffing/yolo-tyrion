@@ -69,22 +69,35 @@ def get_contrast_moment_matrix(N, is_minimal=False):
     if is_minimal:
         contrasts = np.array([
             [+1, +1, +1, +1],
-            [+1, +1, -1, -1],
-            #[+1, -1, +1, -1],
-            [+1, -1, -1, +1],
-            #[-1, +1, +1, -1],
-            #[-1, +1, -1, +1],
-            #[-1, -1, +1, +1],
+            #[+1, +1, -1, -1],
+            ##[+1, -1, +1, -1],
+            #[+1, -1, -1, +1],
+            ##[-1, +1, +1, -1],
+            ##[-1, +1, -1, +1],
+            ##[-1, -1, +1, +1],
+            [+1, +1, +0, +0],
+            #[+1, +0, +1, +0],
+            #[+0, +1, +0, +1],
+            #[+0, +0, +1, +1],
+            [+1, +0, +0, +1],
+            #[+0, +1, +1, +0],
             ], dtype=int)
     else:
         contrasts = np.array([
             [+1, +1, +1, +1],
-            [+1, +1, -1, -1],
-            [+1, -1, +1, -1],
-            [+1, -1, -1, +1],
-            [-1, +1, +1, -1],
-            [-1, +1, -1, +1],
-            [-1, -1, +1, +1],
+            #[+1, +1, -1, -1],
+            #[+1, -1, +1, -1],
+            #[+1, -1, -1, +1],
+            #[-1, +1, +1, -1],
+            #[-1, +1, -1, +1],
+            #[-1, -1, +1, +1],
+            #
+            [+1, +1, +0, +0],
+            [+1, +0, +1, +0],
+            [+0, +1, +0, +1],
+            [+0, +0, +1, +1],
+            [+1, +0, +0, +1],
+            [+0, +1, +1, +0],
             ], dtype=int)
     M = np.zeros((4**N, len(contrasts)), dtype=int)
     for i, t in enumerate(N_to_tuples(N)):
@@ -116,13 +129,16 @@ def submain_pseudoinverse(args):
     print 'pseudoinverse of R:'
     print scipy.linalg.pinv(R)
 
-def main(args):
-    #submain_pseudoinverse(args)
+def submain_oeis(args):
     for N in range(1, 10):
         # this is like http://oeis.org/A005232
         print N
         print len(get_canonical_tuples(N))
         print
+
+def main(args):
+    #submain_oeis(args)
+    submain_pseudoinverse(args)
 
 
 if __name__ == '__main__':
