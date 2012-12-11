@@ -151,26 +151,19 @@ def get_hardcoded_counterexample_general_constraints():
 
 def submain_pseudoinverse(args):
     N = args.N
-
     # Construct two arrays each with 4**N rows.
     # One of the arrays will have entries in {+1, -1}
     # corresponding to coefficients in 7 moment-of-contrast constraint.
     # The other array will have entries in {0, 1}
     # corresponding to symmetries among moments.
-    print get_canonical_tuples(N)
     X = get_indicator_matrix(N)
     M = get_contrast_moment_matrix(N, args.minimal_contrasts)
-    print X
-    print M
     R = np.dot(M.T, X)
-    print 'R:'
-    print R
+    print 'zero-indexed representations of canonical monomials:'
+    print get_canonical_tuples(N)
     print
-    print 'singular values of R:'
-    print scipy.linalg.svd(R, full_matrices=False, compute_uv=False)
-    print
-    print 'pseudoinverse of R:'
-    print scipy.linalg.pinv(R)
+    show_XMR(X, M, R)
+
 
 def submain_oeis(args):
     for N in range(1, 10):
@@ -182,52 +175,65 @@ def submain_oeis(args):
 def submain_N_3(args):
     # check properties of the N=3 case
     N = 3
-    print get_canonical_tuples(N)
     X = get_indicator_matrix(N)
     M = get_hardcoded_counterexample_constraints()
-    print X
-    print M
     R = np.dot(M.T, X)
-    print 'R:'
+    print 'zero-indexed representations of canonical monomials:'
+    print get_canonical_tuples(N)
+    print
+    show_XMR(X, M, R)
+
+def get_singular_values(M):
+    return scipy.linalg.svd(M, full_matrices=False, compute_uv=False)
+
+def show_XMR(X, M, R):
+    print 'monomial equivalence matrix X:'
+    print X
+    print
+    print 'constraints matrix M:'
+    print 'M:'
+    print M
+    print
+    print 'R = M^T X:'
     print R
     print
-    print 'R after removing a column:'
-    R = R[:, :-1]
-    print R
+    print 'singular values of X:', 
+    print get_singular_values(X)
     print
-    print 'singular values of R:'
-    print scipy.linalg.svd(R, full_matrices=False, compute_uv=False)
+    print 'singular values of M:'
+    print get_singular_values(M)
+    print
+    print 'singular values of (X | M):'
+    print get_singular_values(np.hstack((X, M)))
+    print
+    print 'singular values of R = X^T M:'
+    print get_singular_values(R)
     print
     print 'pseudoinverse of R:'
     print scipy.linalg.pinv(R)
 
-def main(args):
-    #submain_oeis(args)
-    #submain_pseudoinverse(args)
-    #submain_N_3(args)
-    #
+def submain_demo_itertools_products():
     # experiment with products of linear combinations
     # which are more general than just powers
-    #
-    #for x in itertools.product(((1,2), (3,4), (5,6))):
-    #for x in itertools.product((1,2), (3,4), (5,6)):
-        #print np.prod(x)
-        #print x
+    for x in itertools.product((1,2), (3,4), (5,6)):
+        print np.prod(x)
+
+def submain_N_3_general_constraints():
     N = 3
-    print get_canonical_tuples(N)
     X = get_indicator_matrix(N)
     M = get_hardcoded_counterexample_general_constraints()
-    print X
-    print M
     R = np.dot(M.T, X)
-    print 'R:'
-    print R
+    print 'zero-indexed representations of canonical monomials:'
+    print get_canonical_tuples(N)
     print
-    print 'singular values of R:'
-    print scipy.linalg.svd(R, full_matrices=False, compute_uv=False)
-    print
-    print 'pseudoinverse of R:'
-    print scipy.linalg.pinv(R)
+    show_XMR(X, M, R)
+
+def main(args):
+    #submain_oeis(args)
+    submain_pseudoinverse(args)
+    #submain_N_3(args)
+    #submain_N_3_general_constraints(args)
+
 
 
 if __name__ == '__main__':
