@@ -129,6 +129,25 @@ def get_hardcoded_counterexample_constraints():
                 #M[i, j] = 0
     return M
 
+def get_hardcoded_counterexample_general_constraints():
+    """
+    Use a more general notation for constraints.
+    The less general notation uses only powers of linear combinations.
+    """
+    N = 3
+    constraints = (
+            ((1, 1, 1, 1), (1, 1, 1, 1), (1, 1, 1, 1)), # (X1+X2+X3+X4)^3
+            ((1, 1, 0, 0), (1, 1, 0, 0), (1, 1, 0, 0)), # (X1+X2)^3
+            ((1, 0, 0, 1), (1, 0, 0, 1), (1, 0, 0, 1)), # (X1+X4)^3
+            ((1, 1, 0, 0), (0, 0, 1, 1), (0, 0, 1, 1)), # (X1+X2)*(X3+X4)^2
+            ((1, 0, 0, 1), (0, 1, 1, 0), (0, 1, 1, 0)), # (X1+X4)*(X2+X3)^2
+            )
+    M = np.zeros((4**N, len(constraints)), dtype=int)
+    for j, c in enumerate(constraints):
+        for i, x in enumerate(itertools.product(*c)):
+            M[i, j] = np.prod(x)
+    return M
+
 
 def submain_pseudoinverse(args):
     N = args.N
@@ -160,9 +179,8 @@ def submain_oeis(args):
         print len(get_canonical_tuples(N))
         print
 
-def main(args):
-    #submain_oeis(args)
-    #submain_pseudoinverse(args)
+def submain_N_3(args):
+    # check properties of the N=3 case
     N = 3
     print get_canonical_tuples(N)
     X = get_indicator_matrix(N)
@@ -175,6 +193,34 @@ def main(args):
     print
     print 'R after removing a column:'
     R = R[:, :-1]
+    print R
+    print
+    print 'singular values of R:'
+    print scipy.linalg.svd(R, full_matrices=False, compute_uv=False)
+    print
+    print 'pseudoinverse of R:'
+    print scipy.linalg.pinv(R)
+
+def main(args):
+    #submain_oeis(args)
+    #submain_pseudoinverse(args)
+    #submain_N_3(args)
+    #
+    # experiment with products of linear combinations
+    # which are more general than just powers
+    #
+    #for x in itertools.product(((1,2), (3,4), (5,6))):
+    #for x in itertools.product((1,2), (3,4), (5,6)):
+        #print np.prod(x)
+        #print x
+    N = 3
+    print get_canonical_tuples(N)
+    X = get_indicator_matrix(N)
+    M = get_hardcoded_counterexample_general_constraints()
+    print X
+    print M
+    R = np.dot(M.T, X)
+    print 'R:'
     print R
     print
     print 'singular values of R:'
