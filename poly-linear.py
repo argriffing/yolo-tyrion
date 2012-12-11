@@ -105,6 +105,30 @@ def get_contrast_moment_matrix(N, is_minimal=False):
             M[i, j] = np.prod([c[k] for k in t])
     return M
 
+def get_hardcoded_counterexample_constraints():
+    """
+    Include constraints forcing the xyz, yzw, zwx, wxy expectations to be zero.
+    """
+    N = 3
+    constraints = np.array([
+        [+1, +1, +1, +1],
+        [+1, +1, +0, +0],
+        #[+1, +0, +1, +0],
+        #[+0, +1, +0, +1],
+        #[+0, +0, +1, +1],
+        [+1, +0, +0, +1],
+        #[+0, +1, +1, +0],
+        ], dtype=int)
+    M = np.zeros((4**N, len(constraints)), dtype=int)
+    for i, t in enumerate(N_to_tuples(N)):
+        for j, c in enumerate(constraints):
+            M[i, j] = np.prod([c[k] for k in t])
+            # for fun, do not include coefficients
+            # corresponding to xyz, yzw, zwz, or wxy.
+            #if len(set(t)) == 3:
+                #M[i, j] = 0
+    return M
+
 
 def submain_pseudoinverse(args):
     N = args.N
@@ -138,7 +162,26 @@ def submain_oeis(args):
 
 def main(args):
     #submain_oeis(args)
-    submain_pseudoinverse(args)
+    #submain_pseudoinverse(args)
+    N = 3
+    print get_canonical_tuples(N)
+    X = get_indicator_matrix(N)
+    M = get_hardcoded_counterexample_constraints()
+    print X
+    print M
+    R = np.dot(M.T, X)
+    print 'R:'
+    print R
+    print
+    print 'R after removing a column:'
+    R = R[:, :-1]
+    print R
+    print
+    print 'singular values of R:'
+    print scipy.linalg.svd(R, full_matrices=False, compute_uv=False)
+    print
+    print 'pseudoinverse of R:'
+    print scipy.linalg.pinv(R)
 
 
 if __name__ == '__main__':
