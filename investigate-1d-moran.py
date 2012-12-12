@@ -21,6 +21,30 @@ def get_mathematica_matrix_string(M):
         elements.append(s)
     return '{' + ','.join(s for s in elements) + '}'
 
+def exact_alpha_3_N_7(x):
+    # see http://oeis.org/A098358/table
+    return (x-10)*(x-9)*(x+0)*(x+1) / math.factorial(4)
+
+def exact_scaled_distn(alpha, N):
+    """
+    This was found by abusing wolfram alpha and oeis.
+    http://oeis.org/A098358/table
+    @param alpha: this should be positive integer
+    @param N: this should be positive
+    """
+    if alpha != 3:
+        raise Exception
+    arr = np.zeros(N+3, dtype=int)
+    for i in range(N+3):
+        j = N + 2 - i
+        tri_i = (i * (i + 1)) / 2
+        tri_j = (j * (j + 1)) / 2
+        arr[i] = tri_i * tri_j
+    return arr[1:-1]
+
+def foo(x):
+    return (x-10)*(x-9)*(x+0)*(x+1) / math.factorial(4)
+
 def main(args):
     alpha = args.alpha
     if alpha == math.floor(alpha):
@@ -52,6 +76,9 @@ def main(args):
     # pick out the correct eigenvector
     W, V = scipy.linalg.eig(Q.T)
     w, v = min(zip(np.abs(W), V.T))
+    #
+    v_exact = exact_scaled_distn(alpha, N)
+    v_exact_normalized = v_exact / scipy.linalg.norm(v_exact)
     print 'rate matrix:'
     print Q
     print
@@ -71,8 +98,18 @@ def main(args):
     print 'beta distribution samples normalized to unit norm:'
     print y
     print
+    print 'an exact unnormalized solution for alpha=3, N=7:'
+    print exact_alpha_3_N_7(np.arange(1, 8))
+    print
+    print 'exact unnormalized solution for alpha=3, N=anything:'
+    print v_exact
+    print
+    print 'exact normalized solution for alpha=3, N=anything:'
+    print v_exact_normalized
+    print
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--alpha', default=2.0, type=float,
             help='concentration parameter of beta distribution')
