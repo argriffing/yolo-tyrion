@@ -74,6 +74,12 @@ def exact_scaled_distn_alpha_4(alpha, N):
 def exact_scaled_distn(alpha, N):
     """
     Generalize to any positive integer alpha.
+    Note that this is a convolution.
+    The trick is apparently to treat the beta density
+    as the product of two generating functions.
+    Then I can write this product as the
+    http://en.wikipedia.org/wiki/Cauchy_product
+    of the two series associated with the generating functions.
     """
     arr = np.zeros(N+3, dtype=float)
     for i in range(N+3):
