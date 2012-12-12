@@ -14,6 +14,21 @@ import numpy as np
 import scipy.linalg
 import scipy.stats
 
+def choose(n, k):
+    """
+    A fast way to calculate binomial coefficients by Andrew Dalke.
+    """
+    if 0 <= k <= n:
+        ntok = 1
+        ktok = 1
+        for t in xrange(1, min(k, n - k) + 1):
+            ntok *= n
+            ktok *= t
+            n -= 1
+        return ntok // ktok
+    else:
+        return 0
+
 def get_mathematica_matrix_string(M):
     elements = []
     for row in M:
@@ -25,7 +40,7 @@ def exact_alpha_3_N_7(x):
     # see http://oeis.org/A098358/table
     return (x-10)*(x-9)*(x+0)*(x+1) / math.factorial(4)
 
-def exact_scaled_distn(alpha, N):
+def exact_scaled_distn_alpha_3(alpha, N):
     """
     This was found by abusing wolfram alpha and oeis.
     http://oeis.org/A098358/table
@@ -42,8 +57,31 @@ def exact_scaled_distn(alpha, N):
         arr[i] = tri_i * tri_j
     return arr[1:-1]
 
-def foo(x):
-    return (x-10)*(x-9)*(x+0)*(x+1) / math.factorial(4)
+def exact_scaled_distn_alpha_4(alpha, N):
+    """
+    This uses the tetrahedral generalization of triangular numbers.
+    """
+    if alpha != 4:
+        raise Exception
+    arr = np.zeros(N+3, dtype=int)
+    for i in range(N+3):
+        j = N + 2 - i
+        tet_i = choose(i+2, 3)
+        tet_j = choose(j+2, 3)
+        arr[i] = tet_i * tet_j
+    return arr[1:-1]
+
+def exact_scaled_distn(alpha, N):
+    """
+    Generalize to any positive integer alpha.
+    """
+    arr = np.zeros(N+3, dtype=int)
+    for i in range(N+3):
+        j = N + 2 - i
+        a = choose(i+alpha-2, alpha-1)
+        b = choose(j+alpha-2, alpha-1)
+        arr[i] = a * b
+    return arr[1:-1]
 
 def main(args):
     alpha = args.alpha
@@ -77,8 +115,6 @@ def main(args):
     W, V = scipy.linalg.eig(Q.T)
     w, v = min(zip(np.abs(W), V.T))
     #
-    v_exact = exact_scaled_distn(alpha, N)
-    v_exact_normalized = v_exact / scipy.linalg.norm(v_exact)
     print 'rate matrix:'
     print Q
     print
@@ -98,13 +134,24 @@ def main(args):
     print 'beta distribution samples normalized to unit norm:'
     print y
     print
-    print 'an exact unnormalized solution for alpha=3, N=7:'
-    print exact_alpha_3_N_7(np.arange(1, 8))
-    print
-    print 'exact unnormalized solution for alpha=3, N=anything:'
+    #print 'an exact unnormalized solution for alpha=3, N=7:'
+    #print exact_alpha_3_N_7(np.arange(1, 8))
+    #print
+    if False:
+    #if alpha == 3:
+        v_exact = exact_scaled_distn_alpha_3(alpha, N)
+        v_exact_normalized = v_exact / scipy.linalg.norm(v_exact)
+    elif False:
+    #elif alpha == 4:
+        v_exact = exact_scaled_distn_alpha_4(alpha, N)
+        v_exact_normalized = v_exact / scipy.linalg.norm(v_exact)
+    else:
+        v_exact = exact_scaled_distn(alpha, N)
+        v_exact_normalized = v_exact / scipy.linalg.norm(v_exact)
+    print 'exact unnormalized solution:'
     print v_exact
     print
-    print 'exact normalized solution for alpha=3, N=anything:'
+    print 'exact normalized solution:'
     print v_exact_normalized
     print
 
@@ -116,4 +163,3 @@ if __name__ == '__main__':
     parser.add_argument('--N', default=5, type=int,
             help='population size'),
     main(parser.parse_args())
-
