@@ -75,11 +75,27 @@ def exact_scaled_distn(alpha, N):
     """
     Generalize to any positive integer alpha.
     """
-    arr = np.zeros(N+3, dtype=int)
+    arr = np.zeros(N+3, dtype=float)
     for i in range(N+3):
         j = N + 2 - i
-        a = choose(i+alpha-2, alpha-1)
-        b = choose(j+alpha-2, alpha-1)
+        #a = choose(i+alpha-2, alpha-1)
+        #b = choose(j+alpha-2, alpha-1)
+        a = scipy.special.binom(i+alpha-2, alpha-1)
+        b = scipy.special.binom(j+alpha-2, alpha-1)
+        """
+        a = scipy.special.gamma(i+alpha-1) / (
+                scipy.special.gamma(alpha) *
+                scipy.special.gamma(i + alpha - 2 - (alpha - 1)))
+        b = scipy.special.gamma(j+alpha-1) / (
+                scipy.special.gamma(alpha) *
+                #scipy.special.gamma(j-1))
+                scipy.special.gamma(j + alpha - 2 - (alpha - 1)))
+        """
+        # use the generalization of
+        # triangular, tetrahedral, etc. numbers
+        # implied by the generating function 1/(1-x)^n
+        #a = -((-1)**i)*scipy.special.binom(-alpha, i-1)
+        #b = -((-1)**j)*scipy.special.binom(-alpha, j-1)
         arr[i] = a * b
     return arr[1:-1]
 
@@ -88,7 +104,13 @@ def main(args):
     if alpha == math.floor(alpha):
         alpha = int(alpha)
     N = args.N
-    pre_Q = np.zeros((N+1, N+1), dtype=int)
+    print 'alpha:', alpha
+    print 'N:', N
+    print
+    pre_Q = np.zeros((N+1, N+1), dtype=type(alpha))
+    print 'dtype of pre-rate-matrix:'
+    print pre_Q.dtype
+    print
     # Construct a tridiagonal rate matrix.
     # This rate matrix is scaled by pop size so its entries become huge,
     # but this does not affect the equilibrium distribution.
