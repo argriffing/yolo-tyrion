@@ -17,6 +17,14 @@ from matrixio import m_to_string
 from matrixio import read_matrix
 
 
+def m_to_mathematica_string(M):
+    elements = []
+    for row in M:
+        s = '{' + ','.join(str(x) for x in row) + '}'
+        elements.append(s)
+    return '{' + ','.join(s for s in elements) + '}'
+
+
 #TODO put these global arrays into const data files
 
 # this is a rotation of a contrast matrix of the example tree in "Why neighbor joining works"

@@ -104,6 +104,43 @@ def create_mutation_collapsed(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+def create_mutation_abc(
+        np.ndarray[np.int_t, ndim=2] M,
+        np.ndarray[np.int_t, ndim=3] T,
+        ):
+    """
+    This is a three-allele a--b--c parent-dependent mutational process.
+    It is not the same as the AB--{Ab+aB}--ab diamond mutational process;
+    the state space and connectivity is the same,
+    but the mutational rates are different.
+    The scaling of the resulting rate matrix is strange.
+    Every rate is an integer, but in double precision float format.
+    @param M: M[i, j] is the count of allele j in state index i
+    @param T: T[A, B, C] is the state index for the given allele counts
+    @return: mutation rate matrix
+    """
+    cdef int i
+    cdef int A, B, C
+    cdef int nstates = M.shape[0]
+    cdef np.ndarray[np.float64_t, ndim=2] R = np.zeros((nstates, nstates))
+    for i in range(nstates):
+        # meticulously unpack the allele counts from the corresponding state
+        A = M[i, 0]
+        B = M[i, 1]
+        C = M[i, 2]
+        #
+        if A > 0:
+            R[i, T[A-1, B+1, C  ]] = A
+        if B > 0:
+            R[i, T[A+1, B-1, C  ]] = B
+            R[i, T[A,   B-1, C+1]] = B
+        if C > 0:
+            R[i, T[A,   B+1, C-1]] = C
+        R[i, i] = -(A + 2*B + C)
+    return R
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def create_mutation_collapsed_diag(
         np.ndarray[np.int_t, ndim=2] M,
         np.ndarray[np.int_t, ndim=2] T,

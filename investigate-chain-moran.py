@@ -1,11 +1,7 @@
 """
-Look in detail at finite popsize 4-allele continuous time Moran process.
+Look in detail at finite-N A--B--C mutation continuous time Moran process.
 
-The longer term goal is to find a slick way to write the limit of the
-joint distribution over allele distributions
-as the population size approaches infinity.
-A short step towards this goal is to investigate the distributions
-for small population sizes.
+This is the simplest parent-dependent mutational process that I can imagine.
 """
 
 import argparse
@@ -22,15 +18,15 @@ import MatrixUtil
 def main(args):
     alpha = args.alpha
     N = args.N
-    k = 4
+    k = 3
     print 'alpha:', alpha
     print 'N:', N
     print 'k:', k
     print
     M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
     T = multinomstate.get_inverse_map(M)
-    R_mut = wrightcore.create_mutation(M, T)
-    R_drift = wrightcore.create_moran_drift_rate_k4(M, T)
+    R_mut = wrightcore.create_mutation_abc(M, T)
+    R_drift = wrightcore.create_moran_drift_rate_k3(M, T)
     Q = alpha * R_mut + R_drift
     # pick out the correct eigenvector
     W, V = scipy.linalg.eig(Q.T)
