@@ -155,7 +155,8 @@ def main(args):
             255 * (p / max_prob),
             0,
             0,
-            100,
+            255 * (p / max_prob),
+            #100,
             ], dtype=float)
         #d2[x, y, z, 0] = 255 * (p / max_prob)
         #d2[x, y, z, 1] = 0
