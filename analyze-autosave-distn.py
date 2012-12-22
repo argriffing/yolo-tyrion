@@ -34,14 +34,14 @@ def plot_reciprocal_variance_AB_given_AB_plus_Ab(rows):
     plt.savefig(filename)
     plt.close()
 
-def plot_aB_given_half_AB_plus_Ab(rows):
+def plot_AB_given_half_AB_plus_Ab(rows):
     N = sum(rows[0][:-1])
     Nd2 = N // 2
     filename = 'AB_given_%d_AB_plus_Ab.png' % Nd2
     m = np.zeros(Nd2 + 1)
     for AB, Ab, aB, ab, p in rows:
         if AB + Ab == Nd2:
-            m[aB] += p
+            m[AB] += p
     m /= np.sum(m)
     xs = np.arange(Nd2 + 1)
     ys = m
@@ -51,7 +51,7 @@ def plot_aB_given_half_AB_plus_Ab(rows):
     plt.savefig(filename)
     plt.close()
 
-def plot_aB_given_zero_AB_zero_Ab(rows):
+def plot_AB_given_only_AB_and_Ab(rows):
     N = sum(rows[0][:-1])
     filename = 'AB_given_%d_AB_plus_Ab.png' % N
     m = np.zeros(N+1)
@@ -67,7 +67,7 @@ def plot_aB_given_zero_AB_zero_Ab(rows):
     plt.savefig(filename)
     plt.close()
 
-def plot_AB_plus_Ab_distn(rows):
+def plot_AB_plus_Ab(rows):
     filename = 'AB_plus_Ab.png'
     N = sum(rows[0][:-1])
     m = np.zeros(N+1)
@@ -106,9 +106,9 @@ def main():
     print 'marginal distribution of AB+Ab:'
     print m_AB_Ab
     print
-    plot_AB_plus_Ab_distn(rows)
-    plot_aB_given_zero_AB_zero_Ab(rows)
-    plot_aB_given_half_AB_plus_Ab(rows)
+    plot_AB_plus_Ab(rows)
+    plot_AB_given_only_AB_and_Ab(rows)
+    plot_AB_given_half_AB_plus_Ab(rows)
     plot_reciprocal_variance_AB_given_AB_plus_Ab(rows)
 
 
