@@ -131,7 +131,7 @@ def main(args):
         R_coo = create_coo_moran(M, T, alpha)
         print 'converting to sparse csr transpose rate matrix...'
         RT_csr = scipy.sparse.csr_matrix(R_coo.T)
-        print 'computing an eigenpair of the sparse matrix using shift-invert...'
+        print 'compute an eigenpair of the sparse matrix using shift-invert...'
         W, V = scipy.sparse.linalg.eigs(RT_csr, k=1, sigma=1)
         #print 'dense form of sparsely constructed matrix:'
         #print RT_csr.todense()
@@ -142,6 +142,13 @@ def main(args):
         print 'sparse stationary distribution eigenvector:'
         print V[:, 0]
         print
+        v = abs(V[:, 0])
+        v /= np.sum(v)
+        autosave_filename = 'full-moran-autosave.txt'
+        print 'writing the stationary distn to', autosave_filename, '...'
+        with open(autosave_filename, 'w') as fout:
+            for p, (X, Y, Z, W) in zip(v, M):
+                print >> fout, X, Y, Z, W, p
 
 
 if __name__ == '__main__':
