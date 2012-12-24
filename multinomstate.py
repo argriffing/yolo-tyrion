@@ -82,6 +82,15 @@ def get_sorted_states(N, k):
     return np.array(sorted(
         gen_reversed_states(N, k), reverse=True, key=max))
 
+def get_inverse_dict(M):
+    """
+    The input M[i,j] is count of allele j for pop state index i.
+    The output T[(i,j,...)] maps allele count tuple to pop state index
+    @param M: multinomial state map
+    @return: T
+    """
+    return dict((tuple(state), i) for i, state in enumerate(M))
+
 def get_inverse_map(M):
     """
     The input M[i,j] is count of allele j for pop state index i.

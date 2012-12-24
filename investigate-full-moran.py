@@ -8,6 +8,7 @@ A short step towards this goal is to investigate the distributions
 for small population sizes.
 """
 
+import sys
 import argparse
 import math
 
@@ -39,7 +40,6 @@ def _coo_helper(coo_i, coo_j, coo_r, i, j, r):
     coo_i.append(i)
     coo_j.append(i)
     coo_r.append(-r)
-
 
 def create_coo_moran(M, T, alpha):
     """
@@ -100,8 +100,11 @@ def main(args):
     print
     print 'defining the state vectors...'
     M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
-    T = multinomstate.get_inverse_map(M)
+    print 'M.shape:', M.shape
     if args.dense:
+        print 'defining the state vector inverse map...'
+        T = multinomstate.get_inverse_map(M)
+        print 'T.shape:', T.shape
         print 'constructing dense mutation rate matrix...'
         R_mut = wrightcore.create_mutation(M, T)
         print 'constructing dense drift rate matrix...'
@@ -126,13 +129,20 @@ def main(args):
         print 'abs eigenvector corresponding to smallest abs eigenvalue:'
         print np.abs(v)
         print
-    if args.sparse:
+    if args.sparse or args.shift_invert:
+        print 'defining the state vector inverse dict...'
+        T = multinomstate.get_inverse_dict(M)
+        print 'sys.getsizeof(T):', sys.getsizeof(T)
         print 'constructing sparse coo mutation+drift rate matrix...'
         R_coo = create_coo_moran(M, T, alpha)
         print 'converting to sparse csr transpose rate matrix...'
         RT_csr = scipy.sparse.csr_matrix(R_coo.T)
-        print 'compute an eigenpair of the sparse matrix using shift-invert...'
-        W, V = scipy.sparse.linalg.eigs(RT_csr, k=1, sigma=1)
+        if args.shift_invert:
+            print 'compute an eigenpair using shift-invert mode...'
+            W, V = scipy.sparse.linalg.eigs(RT_csr, k=1, sigma=1)
+        else:
+            print 'compute an eigenpair using "small magnitude" mode...'
+            W, V = scipy.sparse.linalg.eigs(RT_csr, k=1, which='SM')
         #print 'dense form of sparsely constructed matrix:'
         #print RT_csr.todense()
         #print
@@ -161,5 +171,7 @@ if __name__ == '__main__':
             help='use dense matrix linear algebra')
     parser.add_argument('--sparse', action='store_true',
             help='use sparse matrix linear algebra')
+    parser.add_argument('--shift-invert', action='store_true',
+            help='use shift-invert mode for sparse matrices')
     main(parser.parse_args())
 
