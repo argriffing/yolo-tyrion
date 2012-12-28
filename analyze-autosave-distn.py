@@ -94,7 +94,6 @@ def main():
     N = sum(rows[0][:-1])
     print 'defining the state vectors...'
     M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
-    T = multinomstate.get_inverse_map(M)
     m_AB_ab = np.zeros(N+1)
     m_AB_Ab = np.zeros(N+1)
     for AB, Ab, aB, ab, p in rows:
