@@ -82,7 +82,7 @@ def create_coo_moran(M, T, alpha):
     """
     Construct the sparse Moran rate matrix.
     Initially build it as a coo_matrix,
-    which presumably is efficient to transpose and to convert to a csr_matrix.
+    which presumably is efficient to transpose and to convert to a csc_matrix.
     @param M: index to state description
     @param T: state description to index
     @return: scipy.sparse.coo_matrix
@@ -188,18 +188,18 @@ def main(args):
     T = get_inverse_dict(M)
     logging.info('constructing sparse coo mutation+drift rate matrix...')
     R_coo = create_coo_moran(M, T, alpha)
-    logging.info('converting to sparse csr transpose rate matrix...')
-    RT_csr = scipy.sparse.csr_matrix(R_coo.T)
+    logging.info('converting to sparse csc transpose rate matrix...')
+    RT_csc = scipy.sparse.csc_matrix(R_coo.T)
     logging.info('computing an eigenpair using "small magnitude" mode...')
-    W, V = scipy.sparse.linalg.eigs(RT_csr, k=1, which='SM')
+    W, V = scipy.sparse.linalg.eigs(RT_csc, k=1, which='SM')
     logging.debug('sparse eigenvalues:')
     logging.debug(str(W))
     logging.debug('sparse stationary distribution eigenvector:')
     logging.debug(str(V[:, 0]))
     v = abs(V[:, 0])
     v /= np.sum(v)
-    logging.info('opening %s for writing...' % args.outfile)
-    with open(args.outfile, 'w') as fout:
+    logging.info('opening %s for writing...' % args.output)
+    with open(args.output, 'w') as fout:
         logging.info('writing the header...')
         print >> fout, '\t'.join(str(x) for x in ('AB', 'Ab', 'aB', 'ab', 'p'))
         logging.info('writing the equilibrium distribution...')
