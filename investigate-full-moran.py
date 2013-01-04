@@ -11,6 +11,7 @@ for small population sizes.
 import sys
 import argparse
 import math
+import collections
 
 import numpy as np
 import scipy.linalg
@@ -21,6 +22,16 @@ import scipy.sparse.linalg
 import wrightcore
 import multinomstate
 import MatrixUtil
+
+def gen_states_for_induction(N):
+    """
+    @param N: population size
+    """
+    for AB in reversed(range(N+1)):
+        for ab in range(N - AB + 1):
+            for aB in range(N - AB - ab + 1):
+                Ab = N - AB - ab - aB
+                yield (AB, Ab, aB, ab)
 
 def _coo_helper(coo_i, coo_j, coo_r, i, j, r):
     """
@@ -99,8 +110,12 @@ def main(args):
     print 'k:', k
     print
     print 'defining the state vectors...'
-    M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
+    M = np.array(list(gen_states_for_induction(N)), dtype=int)
+    #M = np.array(list(multinomstate.gen_states(N, k)), dtype=int)
     print 'M.shape:', M.shape
+    print 'M:'
+    print M
+    print
     if args.dense:
         print 'defining the state vector inverse map...'
         T = multinomstate.get_inverse_map(M)
@@ -114,21 +129,35 @@ def main(args):
         print 'taking eigendecomposition of dense rate matrix...'
         W, V = scipy.linalg.eig(Q.T)
         w, v = min(zip(np.abs(W), V.T))
-        print 'rate matrix:'
-        print Q
-        print
-        print 'transpose of rate matrix:'
-        print Q.T
-        print
-        print 'eigendecomposition of transpose of rate matrix as integers:'
-        print (W, V)
-        print
-        print 'rate matrix in mathematica notation:'
-        print MatrixUtil.m_to_mathematica_string(Q.astype(int))
-        print
-        print 'abs eigenvector corresponding to smallest abs eigenvalue:'
-        print np.abs(v)
-        print
+        if args.eigvals:
+            print 'eigenvalues:'
+            print W
+            # get integer approximations of eigenvalues
+            d = collections.defaultdict(int)
+            for raw_eigval in W:
+                int_eigval = int(np.round(raw_eigval.real))
+                d[int_eigval] += 1
+            arr = []
+            for int_eigval in reversed(sorted(d)):
+                s = '%d^%d' % (-int_eigval, d[int_eigval])
+                arr.append(s)
+            print ' '.join(arr)
+        else:
+            print 'rate matrix:'
+            print Q
+            print
+            print 'transpose of rate matrix:'
+            print Q.T
+            print
+            print 'eigendecomposition of transpose of rate matrix as integers:'
+            print (W, V)
+            print
+            print 'rate matrix in mathematica notation:'
+            print MatrixUtil.m_to_mathematica_string(Q.astype(int))
+            print
+            print 'abs eigenvector corresponding to smallest abs eigenvalue:'
+            print np.abs(v)
+            print
     if args.sparse or args.shift_invert:
         print 'defining the state vector inverse dict...'
         T = multinomstate.get_inverse_dict(M)
@@ -171,6 +200,8 @@ if __name__ == '__main__':
             help='use dense matrix linear algebra')
     parser.add_argument('--sparse', action='store_true',
             help='use sparse matrix linear algebra')
+    parser.add_argument('--eigvals', action='store_true',
+            help='show dense eigenvalues only')
     parser.add_argument('--shift-invert', action='store_true',
             help='use shift-invert mode for sparse matrices')
     main(parser.parse_args())
