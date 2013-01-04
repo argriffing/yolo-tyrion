@@ -1,0 +1,57 @@
+\documentclass{article}
+
+\usepackage[authoryear,round]{natbib}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usepackage{hyperref}
+
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{trick}[thm]{Trick}
+
+\theoremstyle{definition}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{prop}[thm]{Property}
+
+\usetikzlibrary{decorations.pathreplacing}
+
+% the default max matrix dimensions in amsmath is ten
+\setcounter{MaxMatrixCols}{20}
+
+% this is copied from the internet
+% and its purpose is to compensate for bad vertical spacing in amsmath pmatrix
+% by letting you do things like \begin{pmatrix}[1.5]
+\makeatletter
+\renewcommand*\env@matrix[1][\arraystretch]{%
+	  \edef\arraystretch{#1}%
+	    \hskip -\arraycolsep
+	      \let\@ifnextchar\new@ifnextchar
+	        \array{*\c@MaxMatrixCols c}}
+		\makeatother
+
+
+\begin{document}
+
+\title
+{
+	Decompositions of rate matrices of continuous-time Moran
+	models of allele frequency change in tiny populations,
+	for specific weird mutational structures
+}
+% \author{Alexander Griffing}
+\maketitle
+
+\section{hello}
+
+\section{goodbye}
+
+\end{document}
+
