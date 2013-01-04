@@ -49,9 +49,40 @@
 % \author{Alexander Griffing}
 \maketitle
 
-\section{hello}
+\section{Jordan decompositions for tiny populations of size $N$}
 
-\section{goodbye}
+In each of these examples,
+the mutation rate is scaled so that the equilibrium distribution
+of the compound state \{AB + Ab\} is discrete uniform.
+
+\subsection{$N=1$}
+
+\begin{equation}
+	Q =
+	\begin{pmatrix}
+		-2 & 1 & 1 & 0 \\
+		1 & -2 & 0 & 1 \\
+		1 & 0 & -2 & 1 \\
+		0 & 1 & 1 & -2
+	\end{pmatrix}
+\end{equation}
+
+\begin{align}
+	P &=
+	\begin{pmatrix}
+		1 & -1 & 0 & 1 \\
+		-1 & 0 & -1 & 1 \\
+		-1 & 0 & 1 & 1 \\
+		1 & 1 & 0 & 1
+	\end{pmatrix} \\
+	J &=
+	\begin{pmatrix}
+		-4 & 0 & 0 & 0 \\
+		0 & -2 & 0 & 0 \\
+		0 & 0 & -2 & 0 \\
+		0 & 0 & 0 & 0
+	\end{pmatrix}
+\end{align}
 
 \end{document}
 

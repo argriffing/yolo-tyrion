@@ -123,9 +123,9 @@ def main(args):
         print 'eigendecomposition of transpose of rate matrix as integers:'
         print (W, V)
         print
-        #print 'transpose of rate matrix in mathematica notation:'
-        #print MatrixUtil.m_to_mathematica_string(Q.T.astype(int))
-        #print
+        print 'rate matrix in mathematica notation:'
+        print MatrixUtil.m_to_mathematica_string(Q.astype(int))
+        print
         print 'abs eigenvector corresponding to smallest abs eigenvalue:'
         print np.abs(v)
         print
@@ -163,7 +163,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--alpha', default=2.0, type=float,
+    parser.add_argument('--alpha', default=1.0, type=float,
             help='concentration parameter of beta distribution')
     parser.add_argument('--N', default=5, type=int,
             help='population size'),
