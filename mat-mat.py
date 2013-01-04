@@ -46,9 +46,16 @@ def main(args):
         M = sympy.Matrix(nrows, ncols, flat_arr)
         arr = M.inv().tolist()
 
+    # define the scaling factor
+    sf = 1
+    try:
+        sf = int(args.scale)
+    except ValueError:
+        sf = float(args.scale)
+
     # attempt to write the matrix in tex form
     for row in arr:
-        print ' & '.join(str(x) for x in row) + r' \\'
+        print ' & '.join(str(x * sf) for x in row) + r' \\'
 
 
 if __name__ == '__main__':
@@ -56,5 +63,8 @@ if __name__ == '__main__':
     parser.add_argument(
             '--sympy-inverse', action='store_true',
             help='use sympy to compute the inverse of the matrix')
+    parser.add_argument(
+            '--scale',
+            help='scale the matrix by this value')
     main(parser.parse_args())
 
