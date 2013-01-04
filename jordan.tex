@@ -57,6 +57,11 @@ of the compound state \{AB + Ab\} is discrete uniform.
 
 \subsection{$N=1$}
 
+When the population size is $1$, only the mutation process matters,
+and genetic drift does not affect the rate matrix.
+The population genetic rate matrix is just the mutation rate matrix.
+
+Population genetic rate matrix for $N = 1$:
 \begin{equation}
 	Q =
 	\begin{pmatrix}
@@ -67,20 +72,89 @@ of the compound state \{AB + Ab\} is discrete uniform.
 	\end{pmatrix}
 \end{equation}
 
-\begin{align}
-	P &=
+Jordan decomposition:
+\begin{equation}
+	Q =
 	\begin{pmatrix}
 		1 & -1 & 0 & 1 \\
 		-1 & 0 & -1 & 1 \\
 		-1 & 0 & 1 & 1 \\
 		1 & 1 & 0 & 1
 	\end{pmatrix} \\
-	J &=
 	\begin{pmatrix}
 		-4 & 0 & 0 & 0 \\
 		0 & -2 & 0 & 0 \\
 		0 & 0 & -2 & 0 \\
 		0 & 0 & 0 & 0
+	\end{pmatrix}
+	\begin{pmatrix}
+		1/4 & -1/4 & -1/4 & 1/4 \\
+		-1/2 & 0 & 0 & 1/2 \\
+		0 & -1/2 & 1/2 & 0 \\
+		1/4 & 1/4 & 1/4 & 1/4
+	\end{pmatrix}
+\end{equation}
+
+
+\subsection{$N = 2$}
+
+Population genetic rate matrix for $N = 1$:
+\begin{equation}
+	Q =
+	\begin{pmatrix}
+		-4 & 2 & 0 & 2 & 0 & 0 & 0 & 0 & 0 & 0 \\
+		2 & -6 & 2 & 0 & 1 & 0 & 1 & 0 & 0 & 0 \\
+		0 & 2 & -4 & 0 & 0 & 0 & 0 & 2 & 0 & 0 \\
+		2 & 0 & 0 & -6 & 1 & 2 & 1 & 0 & 0 & 0 \\
+		0 & 1 & 1 & 1 & -6 & 1 & 0 & 1 & 1 & 0 \\
+		0 & 0 & 0 & 2 & 0 & -4 & 0 & 0 & 2 & 0 \\
+		1 & 1 & 0 & 1 & 0 & 0 & -6 & 1 & 1 & 1 \\
+		0 & 0 & 2 & 0 & 1 & 0 & 1 & -6 & 0 & 2 \\
+		0 & 0 & 0 & 0 & 1 & 2 & 1 & 0 & -6 & 2 \\
+		0 & 0 & 0 & 0 & 0 & 0 & 0 & 2 & 2 & -4
+	\end{pmatrix}
+\end{equation}
+
+Jordan decomposition $Q = P J P^{-1}$:
+\begin{align}
+	P &=
+	\begin{pmatrix}
+		2 & -1 & 0 & 1 & 0 & 0 & 1 & -1 & 0 & 1 \\
+		-3 & 0 & -1 & 0 & 1 & 0 & 0 & 0 & -1 & 1 \\
+		2 & 1 & 1 & 1 & 0 & 0 & -1 & 1 & -2 & 1 \\
+		-3 & 2 & 1 & -1 & -1 & 0 & 0 & -1 & 1 & 1 \\
+		2 & 0 & 0 & -4 & 0 & -1 & -1 & 0 & 0 & 1 \\
+		2 & -1 & -1 & 1 & 0 & 0 & -1 & -1 & 2 & 1 \\
+		2 & 0 & 0 & 0 & 0 & 1 & 1 & 0 & 0 & 1 \\
+		-3 & -2 & -1 & -1 & -1 & 0 & 0 & 1 & -1 & 1 \\
+		-3 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 1 \\
+		2 & 1 & 0 & 1 & 0 & 0 & 1 & 1 & 0 & 1
+	\end{pmatrix} \\
+	J &=
+	\begin{pmatrix}
+		-10 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+		0 & -8 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+		0 & 0 & -8 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+		0 & 0 & 0 & -6 & 0 & 0 & 0 & 0 & 0 & 0 \\
+		0 & 0 & 0 & 0 & -6 & 0 & 0 & 0 & 0 & 0 \\
+		0 & 0 & 0 & 0 & 0 & -6 & 0 & 0 & 0 & 0 \\
+		0 & 0 & 0 & 0 & 0 & 0 & -4 & 0 & 0 & 0 \\
+		0 & 0 & 0 & 0 & 0 & 0 & 0 & -2 & 0 & 0 \\
+		0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -2 & 0 \\
+		0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0
+	\end{pmatrix} \\
+	P^{-1} &=
+	\begin{pmatrix}
+		1/40 & -1/20 & 1/40 & -1/20 & 1/20 & 1/40 & 1/20 & -1/20 & -1/20 & 1/40 \\
+		-1/6 & 1/6 & 0 & 1/6 & 0 & 0 & 0 & -1/6 & -1/6 & 1/6 \\
+		1/6 & -1/3 & 1/6 & 0 & 0 & -1/6 & 0 & 0 & 1/3 & -1/6 \\
+		1/12 & 0 & 1/12 & 0 & -1/6 & 1/12 & -1/6 & 0 & 0 & 1/12 \\
+		-1/24 & 1/4 & -1/24 & -1/4 & 1/12 & -1/24 & 1/12 & -1/4 & 1/4 & -1/24 \\
+		-5/12 & 0 & 1/12 & 0 & -1/6 & 1/12 & 5/6 & 0 & 0 & -5/12 \\
+		1/4 & 0 & -1/4 & 0 & 0 & -1/4 & 0 & 0 & 0 & 1/4 \\
+		-1/3 & -1/6 & 0 & -1/6 & 0 & 0 & 0 & 1/6 & 1/6 & 1/3 \\
+		-1/6 & -1/6 & -1/6 & 0 & 0 & 1/6 & 0 & 0 & 1/6 & 1/6 \\
+		7/60 & 1/10 & 7/60 & 1/10 & 1/15 & 7/60 & 1/15 & 1/10 & 1/10 & 7/60
 	\end{pmatrix}
 \end{align}
 

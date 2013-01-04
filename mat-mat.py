@@ -11,8 +11,9 @@ import ast
 import string
 
 import numpy as np
+import sympy
 
-def main():
+def main(args):
 
     # define a character translation table
     intab = '{}'
@@ -37,11 +38,23 @@ def main():
     # attempt to construct the matrix as a list of lists of numbers
     arr = ast.literal_eval(s_trimmed)
 
+    # possibly use sympy to invert the matrix
+    if args.sympy_inverse:
+        nrows = len(arr)
+        ncols = len(arr[0])
+        flat_arr = [x for row in arr for x in row]
+        M = sympy.Matrix(nrows, ncols, flat_arr)
+        arr = M.inv().tolist()
+
     # attempt to write the matrix in tex form
     for row in arr:
         print ' & '.join(str(x) for x in row) + r' \\'
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+            '--sympy-inverse', action='store_true',
+            help='use sympy to compute the inverse of the matrix')
+    main(parser.parse_args())
 
